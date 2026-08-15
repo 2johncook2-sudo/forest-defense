@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Forest Defense</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; background:#111; }
+  #map { position: absolute; inset: 0; z-index: 1; }
+  #gameCanvas { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
+  #hud { position: absolute; top: env(safe-area-inset-top, 0); left: 0; right: 0; z-index: 900;
+         display: none; justify-content: center; gap: 5px; padding: 8px 4px; flex-wrap: wrap; pointer-events: none; }
+  .stat { background: rgba(15,23,20,.85); color: #eee; border-radius: 10px; padding: 4px 8px;
+          font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+  .stat small { font-weight: 500; color: #7ee2a0; font-size: 10px; }
+  .stat.hurt { background: rgba(127,29,29,.9); }
+  #waveBanner { position: absolute; top: 22%; left: 0; right: 0; text-align: center; z-index: 950; pointer-events: none;
+                font-size: 30px; font-weight: 800; color: #fff; text-shadow: 0 2px 12px #000, 0 0 30px #f43;
+                opacity: 0; transition: opacity .5s; }
+  #toasts { position: absolute; bottom: 178px; left: 0; right: 0; z-index: 940; display: flex;
+            flex-direction: column; align-items: center; gap: 5px; pointer-events: none; }
+  .toast { background: rgba(15,23,20,.9); color: #fff; padding: 6px 14px; border-radius: 16px; font-size: 13px;
+           animation: toastIn .25s ease-out; max-width: 86%; text-align: center; }
+  .toast.bad { background: rgba(120,25,25,.92); }
+  .toast.good { background: rgba(22,101,52,.92); }
+  @keyframes toastIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  #buildBar { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0) + 8px); left: 0; right: 0; z-index: 900;
+              display: none; gap: 7px; padding: 6px 10px; overflow-x: auto; scrollbar-width: none; }
+  #buildBar::-webkit-scrollbar { display: none; }
+  .bbtn { flex: 0 0 auto; min-width: 72px; background: rgba(20,28,24,.92); border: 1px solid #3a4; color: #fff;
+          border-radius: 12px; padding: 7px 8px; font-size: 12px; text-align: center; font-weight: 600;
+          box-shadow: 0 2px 8px rgba(0,0,0,.5); user-select: none; }
+  .bbtn .ico { font-size: 20px; display: block; }
+  .bbtn .cost { display: block; font-size: 10px; font-weight: 400; color: #ffd66e; }
+  .bbtn:disabled, .bbtn.off { opacity: .38; border-color: #555; }
+  .bbtn:active:not(.off) { transform: scale(.94); background: rgba(40,80,50,.95); }
+  #stanceBar { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0) + 96px); left: 0; right: 0; z-index: 930;
+               display: none; justify-content: center; gap: 8px; }
+  .stbtn { background: rgba(20,28,24,.95); border: 1px solid #6a5; color: #fff; border-radius: 12px;
+           padding: 10px 14px; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  .stbtn:active { transform: scale(.95); }
+  #joyZone { position: absolute; left: 12px; bottom: calc(env(safe-area-inset-bottom, 0) + 88px); width: 130px; height: 130px;
+             z-index: 920; display: none; touch-action: none; }
+  #joyBase { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,255,255,.12);
+             border: 2px solid rgba(255,255,255,.35); }
+  #joyKnob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%;
+             background: rgba(255,255,255,.75); box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  #sideBtns { position: absolute; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0) + 92px); z-index: 920;
+              display: none; flex-direction: column; gap: 8px; }
+  .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: rgba(15,23,20,.85);
+          color: #fff; font-size: 17px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  .sbtn:active { transform: scale(.92); }
+  .sbtn.armed { background: #b45309; }
+  .screen { position: absolute; inset: 0; z-index: 1000; background: linear-gradient(180deg, #0b1f14 0%, #10281a 60%, #0b1a12 100%);
+            color: #eaf5ec; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 26px; overflow-y: auto; }
+  .screen h1 { font-size: 34px; margin-bottom: 4px; letter-spacing: .5px; }
+  .screen .sub { opacity: .75; font-size: 14px; margin-bottom: 14px; max-width: 430px; line-height: 1.45; }
+  .selrow { display: flex; align-items: center; gap: 6px; margin: 4px 0; flex-wrap: wrap; justify-content: center; }
+  .selrow .lbl { font-size: 13px; opacity: .8; width: 100%; margin-top: 6px; }
+  .pill { background: transparent; color: #cfe9d6;
+          border: 1.5px solid #2e5c40; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; }
+  .pill.sel { background: #1f7a3d; color: #fff; border-color: #2fa45a; }
+  .bigbtn { display: block; width: min(320px, 84vw); margin: 7px auto; padding: 14px; border-radius: 14px; border: none;
+            font-size: 17px; font-weight: 700; background: #1f7a3d; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+  .bigbtn.alt { background: #23405c; }
+  .bigbtn:active { transform: scale(.97); }
+  .howto { text-align: left; font-size: 13px; line-height: 1.55; opacity: .85; max-width: 430px; margin-top: 18px; }
+  .howto b { color: #9fe3b0; }
+  #gpsStatus { margin-top: 12px; font-size: 14px; color: #ffd66e; min-height: 20px; }
+  .statgrid { display: grid; grid-template-columns: auto auto; gap: 6px 18px; font-size: 16px; margin: 14px 0 20px; text-align: left; }
+  .statgrid b { color: #ffd66e; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<canvas id="gameCanvas"></canvas>
+
+<div id="hud">
+  <div class="stat" id="hpChip">❤️ <span id="sHp">250</span></div>
+  <div class="stat">🌾 <span id="sSupply">0</span><small id="rSupply"></small></div>
+  <div class="stat">⚙️ <span id="sIron">0</span><small id="rIron"></small></div>
+  <div class="stat">🧱 <span id="sStone">0</span><small id="rStone"></small></div>
+  <div class="stat">🏰 <span id="sKeep">600</span></div>
+  <div class="stat">⚔️ <span id="sWave">–</span></div>
+  <div class="stat">🏃 <span id="sDist">0.00 km</span></div>
+</div>
+<div id="waveBanner"></div>
+<div id="toasts"></div>
+
+<div id="buildBar">
+  <button class="bbtn" id="bDef"><span class="ico">🛡️</span>Defender<span class="cost" id="cDef">30 🌾</span></button>
+  <button class="bbtn" id="bVet"><span class="ico">⚔️</span>Veteran<span class="cost" id="cVet">30 🌾 + 10 ⚙️</span></button>
+  <button class="bbtn" id="bMine"><span class="ico">⛏️</span>Mine<span class="cost">40 🌾</span></button>
+  <button class="bbtn" id="bQuarry"><span class="ico">⚒️</span>Quarry<span class="cost">40 🌾</span></button>
+  <button class="bbtn" id="bSmith"><span class="ico">🔥</span>Smithy<span class="cost">60 🌾</span></button>
+  <button class="bbtn" id="bTower"><span class="ico">🗼</span>Watchtower<span class="cost">40 🌾</span></button>
+  <button class="bbtn" id="bFort"><span class="ico">🧱</span>Wall<span class="cost">15 🌾 + 15 🧱</span></button>
+</div>
+
+<div id="stanceBar">
+  <button class="stbtn" id="stHold">🛑 Hold ground</button>
+  <button class="stbtn" id="stSkirm">⚔️ Engage at will</button>
+</div>
+
+<div id="joyZone"><div id="joyBase"></div><div id="joyKnob"></div></div>
+<div id="sideBtns">
+  <button class="sbtn" id="btnLine">🚩</button>
+  <button class="sbtn" id="btnCenter">🎯</button>
+  <button class="sbtn" id="btnPause">⏸️</button>
+  <button class="sbtn" id="btnSpeed" style="display:none">1×</button>
+</div>
+
+<div class="screen" id="menu">
+  <h1>🏰 Forest Defense</h1>
+  <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
+
+  <div class="selrow"><span class="lbl">Session length</span></div>
+  <div class="selrow" id="lenRow">
+    <button class="pill" data-waves="6">Quick · 6 waves<br><small>~15 min</small></button>
+    <button class="pill sel" data-waves="10">Standard · 10 waves<br><small>~25 min</small></button>
+    <button class="pill" data-waves="14">Epic · 14 waves<br><small>~40 min</small></button>
+  </div>
+  <div class="selrow"><span class="lbl">Difficulty</span></div>
+  <div class="selrow" id="diffRow">
+    <button class="pill" data-mult="0.7">Recruit</button>
+    <button class="pill sel" data-mult="1">Soldier</button>
+    <button class="pill" data-mult="1.35">Veteran</button>
+  </div>
+
+  <div style="height:10px"></div>
+  <button class="bigbtn" id="btnSim">🕹️ Simulator mode<br><small style="font-weight:400">test from your armchair (joystick, ⏩ 4× speed)</small></button>
+  <button class="bigbtn alt" id="btnGps">📍 GPS mode<br><small style="font-weight:400">play for real — go outside</small></button>
+  <div id="gpsStatus"></div>
+  <div class="howto">
+    <b>How to play:</b> Walk/run through cells next to your territory to capture them (green).
+    Resources only produce while connected to your Keep by an unbroken green path: 🌾 <b>grain</b> gives supply,
+    ⛰️ <b>iron</b> (⛏️ Mine) enables veterans, 🪨 <b>stone</b> (⚒️ Quarry) enables walls, and a captured ⛲ <b>spring</b>
+    rapidly heals troops and walls nearby. Stand by your damaged Keep to repair it with supply.<br><br>
+    <b>⏳ The clock is merciless.</b> Waves launch on a fixed countdown whether or not you've cleared the last one.
+    Win by surviving all scheduled waves <i>and</i> sweeping the field clean.<br><br>
+    <b>❤️ You can be hurt.</b> Enemies caught in your aura stop marching and turn on <i>you</i>, and your bodyguard
+    can only focus a few at a time. At zero HP they scatter — no aura, no capturing — until you retreat and recover.<br><br>
+    <b>⚑ Officers & bandits.</b> Every 5th enemy is an officer who sizes up your strength: too strong to attack,
+    and his band turns <i>bandit</i> — dodging your troops, razing undefended land, and massing with other bands
+    until they're strong enough to strike. Kill the officer and the leaderless mob just charges whatever is closest.<br><br>
+    <b>🚩 Commanding troops:</b> defenders engage nearby enemies on their own and return to their post afterwards.
+    Tap 🚩 to command every defender within 60 m: tap two points and they form a line, then choose
+    <b>Hold ground</b> or <b>Engage at will</b> (the default). Or tap a single defender, then its destination.<br><br>
+    <b>💪 Brutes</b> shrug off basic defenders and smash walls — counter with ⚔️ veterans or walls + focused fire.
+    <b>🐺 Wolves</b> are fast. <b>🏴 Raiders</b> hunt your economy. 🗼 Watchtowers give early, precise warning.
+  </div>
+</div>
+
+<div class="screen" id="endScreen" style="display:none">
+  <h1 id="endTitle">Victory!</h1>
+  <div class="sub" id="endSub"></div>
+  <div class="statgrid" id="endStats"></div>
+  <button class="bigbtn" id="btnEndless" style="display:none">⚔️ Keep playing (endless)</button>
+  <button class="bigbtn alt" onclick="location.reload()">Play again</button>
+</div>
+
+<script>
+'use strict';
+/* =================== CONSTANTS =================== */
+const CELL = 30;
+const ARENA_R = 600;
+const RES_MAX = 430;
+const KEEP_HP_MAX = 600;
+const PLAYER_HP_MAX = 250;
+const BG_RANGE = 35;                  // aura: enemies inside stop and fight YOU
+const BG_DPS = 25, BG_TARGETS = 3;    // bodyguard focuses up to 3 enemies
+const CAPTURE_RADIUS = 20;
+const COMMAND_RANGE = 60;
+const DEF_MOVE_SPEED = 1.2;
+const AGGRO_R = 100;                  // skirmishers engage enemies this close to their post
+const ENEMY_MELEE = 15;               // enemies attack units/you from this range
+const WALL_HP = 350;
+const SPRING_R = 90;
+const WAVE_PERIOD = 110;              // relentless: next wave launches on this clock, always
+const COSTS = { mine:{s:40}, quarry:{s:40}, smith:{s:60}, tower:{s:40}, fort:{s:15,st:15} };
+const DEF_BASE = 30, DEF_SCALE = 2;
+const RATES = { grain:0.5, mine:0.4, quarry:0.3 };
+/* Stats tuned to the spec's calibration table — see FOREST_DEFENSE_SPEC.md */
+const ENEMY_TYPES = {
+  grunt:   { hp:60,  speed:1.9, dps:9,  armored:false, r:5, color:'#e04b3a', bounty:1, power:1   },
+  wolf:    { hp:34,  speed:3.4, dps:10, armored:false, r:4, color:'#f59e0b', bounty:1, power:0.8 },
+  brute:   { hp:320, speed:1.3, dps:28, armored:true,  r:8, color:'#7f1d1d', bounty:5, power:5   },
+  raider:  { hp:60,  speed:2.5, dps:12, armored:false, r:5, color:'#a855f7', bounty:2, power:1   },
+  officer: { hp:100, speed:1.9, dps:10, armored:false, r:6, color:'#991b1b', bounty:4, power:1.6, officer:true },
+};
+const DEF_STATS = {
+  def: { hp:100, dps:10, range:22, armorMult:0.15, color:'#3b82f6', power:1.2 },
+  vet: { hp:220, dps:32, range:25, armorMult:1.0,  color:'#facc15', power:2.6 },
+};
+const PLAYER_POWER = 5;             // the officer's estimate of what YOU are worth
+const ASSAULT_RATIO = 1.5;          // bands need this much overmatch to commit
+const FEATURE_ICONS = { grain:'🌾', iron:'⛰️', stone:'🪨', spring:'⛲' };
+const STRUCT_ICONS  = { mine:'⛏️', quarry:'⚒️', smith:'🔥', tower:'🗼' };
+
+/* =================== STATE =================== */
+const S = {
+  phase: 'menu', mode: null, t: 0,
+  origin: null,
+  player: { x:0, y:0 },
+  playerHp: PLAYER_HP_MAX, routed: false,
+  supply: 60, iron: 0, stone: 0, keepHp: KEEP_HP_MAX,
+  dist: 0, kills: 0, startedAt: 0,
+  cells: new Map(),
+  defenders: [], enemies: [],
+  selDef: null, lineCmd: null, lastOrdered: [],
+  wavesLaunched: 0, wavesToWin: 10, diffMult: 1, endless: false,
+  nextWaveAt: 100, fieldClear: true,
+  groups: [], pendingSpawns: [],
+  bands: new Map(),
+  connDirty: true, connTimer: 0,
+  follow: true, timeScale: 1,
+  gpsWatch: null, gpsAcc: null, lastFix: null,
+};
+
+/* =================== HELPERS =================== */
+const $ = id => document.getElementById(id);
+const dist2 = (a,b) => { const dx=a.x-b.x, dy=a.y-b.y; return dx*dx+dy*dy; };
+const dist = (a,b) => Math.sqrt(dist2(a,b));
+const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+const key = (i,j) => i+','+j;
+const defCost = () => DEF_BASE + DEF_SCALE * S.defenders.length;
+function toLL(x, y) {
+  const lat = S.origin.lat + y / 111320;
+  const lng = S.origin.lng + x / (111320 * Math.cos(S.origin.lat * Math.PI/180));
+  return L.latLng(lat, lng);
+}
+function fromLL(lat, lng) {
+  return { x: (lng - S.origin.lng) * 111320 * Math.cos(S.origin.lat * Math.PI/180),
+           y: (lat - S.origin.lat) * 111320 };
+}
+function toast(msg, cls) {
+  const d = document.createElement('div');
+  d.className = 'toast' + (cls ? ' '+cls : '');
+  d.textContent = msg;
+  $('toasts').appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+}
+function banner(msg, ms) {
+  const b = $('waveBanner');
+  b.textContent = msg; b.style.opacity = 1;
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.style.opacity = 0, ms || 2600);
+}
+
+/* =================== MAP =================== */
+let map, canvas, ctx;
+function initMap(center) {
+  map = L.map('map', { zoomControl: false, attributionControl: true })
+        .setView(center, 16);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap'
+  }).addTo(map);
+  map.on('dragstart', () => S.follow = false);
+  map.on('click', onMapClick);
+  canvas = $('gameCanvas'); ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
+  canvas.style.width = innerWidth+'px'; canvas.style.height = innerHeight+'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const pt = (x,y) => map.latLngToContainerPoint(toLL(x,y));
+
+/* =================== WORLD GEN =================== */
+function cellAt(x, y) { return S.cells.get(key(Math.round(x/CELL), Math.round(y/CELL))); }
+function genWorld() {
+  const n = Math.ceil(ARENA_R / CELL);
+  for (let i=-n; i<=n; i++) for (let j=-n; j<=n; j++) {
+    const cx=i*CELL, cy=j*CELL;
+    if (Math.hypot(cx,cy) > ARENA_R) continue;
+    S.cells.set(key(i,j), { i,j, cx,cy, owner:0, integrity:100,
+                            feature:null, structure:null, fort:false, wallHp:0, connected:false });
+  }
+  for (const c of S.cells.values()) if (Math.hypot(c.cx,c.cy) <= 58) c.owner = 1;
+  S.cells.get('0,0').structure = 'keep';
+  const placed = [];
+  function place(feature, count, rMin, rMax) {
+    let tries = 0;
+    while (count > 0 && tries++ < 500) {
+      const a = Math.random()*Math.PI*2, r = rMin + Math.random()*(rMax-rMin);
+      const c = cellAt(Math.cos(a)*r, Math.sin(a)*r);
+      if (!c || c.feature || c.structure) continue;
+      if (placed.some(p => Math.hypot(p.cx-c.cx, p.cy-c.cy) < 80)) continue;
+      c.feature = feature; placed.push(c); count--;
+    }
+  }
+  place('grain', 6, 100, 330);
+  place('iron', 3, 180, RES_MAX);
+  place('stone', 3, 150, RES_MAX);
+  place('spring', 2, 140, 380);
+  S.connDirty = true;
+}
+function neighbors8(c) {
+  const out = [];
+  for (let di=-1; di<=1; di++) for (let dj=-1; dj<=1; dj++) {
+    if (!di && !dj) continue;
+    const n = S.cells.get(key(c.i+di, c.j+dj));
+    if (n) out.push(n);
+  }
+  return out;
+}
+function recomputeConnectivity() {
+  for (const c of S.cells.values()) c.connected = false;
+  const keep = S.cells.get('0,0');
+  if (!keep || keep.owner !== 1) return;
+  const q = [keep]; keep.connected = true;
+  while (q.length) {
+    const c = q.pop();
+    for (const nb of neighbors8(c)) if (nb.owner===1 && !nb.connected) { nb.connected=true; q.push(nb); }
+  }
+  S.connDirty = false;
+}
+const ownedConn = pred => [...S.cells.values()].filter(c => c.owner===1 && c.connected && pred(c));
+
+/* =================== WAVES (relentless clock) =================== */
+function scheduleWave() {
+  const n = S.wavesLaunched + 1;
+  const total = Math.max(3, Math.round((5 + 2.6*n) * S.diffMult));
+  let comp = [];
+  for (let k=0;k<total;k++) comp.push('grunt');
+  if (n>=2) for (let k=0;k<Math.ceil(total*0.22);k++) comp[Math.floor(Math.random()*comp.length)]='wolf';
+  if (n>=3) for (let k=0;k<Math.ceil((1+Math.floor((n-3)/2))*S.diffMult);k++) comp.push('raider');
+  if (n>=4) for (let k=0;k<Math.ceil((1+Math.floor((n-4)/1.5))*S.diffMult);k++) comp.push('brute');
+  for (let i=comp.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [comp[i],comp[j]]=[comp[j],comp[i]]; }
+  const weights = n < 3 ? [1] : n < 7 ? [0.7, 0.3] : [0.5, 0.3, 0.2];
+  const baseA = Math.random()*Math.PI*2;
+  const sign = Math.random() < 0.5 ? 1 : -1;
+  const angles = [ baseA,
+                   baseA + sign*(Math.PI/2 + Math.random()*Math.PI/2),
+                   baseA - sign*(Math.PI/2 + Math.random()*Math.PI/2) ];
+  S.groups = [];
+  let idx = 0;
+  weights.forEach((w, g) => {
+    const count = g === weights.length-1 ? comp.length - idx : Math.max(1, Math.round(total*w));
+    const slice = comp.slice(idx, idx+count); idx += slice.length;
+    if (!slice.length) return;
+    // every 5th soldier is an officer, slipped in at random positions
+    const nOff = Math.floor(slice.length/5) || (slice.length>=4 ? 1 : 0);
+    for (let k=0;k<nOff;k++) slice.splice(Math.floor(Math.random()*slice.length), 0, 'officer');
+    const a = angles[g];
+    S.groups.push({ angle:a, x:Math.cos(a)*ARENA_R, y:Math.sin(a)*ARENA_R,
+                    comp: slice, main: g===0, revealed:false, precise:false });
+  });
+}
+function checkReveals() {
+  const towers = [...S.cells.values()].filter(c=>c.structure==='tower' && c.owner===1);
+  for (const g of S.groups) {
+    if (g.revealed) continue;
+    const timeLeft = S.nextWaveAt - S.t;
+    const towerNear = towers.some(tw => Math.hypot(tw.cx-g.x, tw.cy-g.y) < 300);
+    if (towerNear && timeLeft <= 45) {
+      g.revealed = true; g.precise = true;
+      toast('🗼 Watchtower: ' + (g.main?'MAIN assault':'flanking raid') + ' from the ' + compass(g.angle) + ' — ' + g.comp.length + ' incoming', 'bad');
+    } else if (timeLeft <= 15) {
+      g.revealed = true;
+      toast('⚠️ ' + (g.main?'Main assault':'Flanking raid') + ' approaching from the ' + compass(g.angle) + '!', 'bad');
+    }
+  }
+}
+function compass(a) {
+  const dirs = ['E','NE','N','NW','W','SW','S','SE'];
+  return dirs[Math.round((((a%(2*Math.PI))+2*Math.PI)%(2*Math.PI)) / (Math.PI/4)) % 8];
+}
+function launchWave() {
+  S.wavesLaunched++;
+  banner('⚔️ WAVE ' + S.wavesLaunched);
+  let delay = 0;
+  const total = S.groups.reduce((s,g)=>s+g.comp.length,0) || 1;
+  S.groups.forEach((g, gi) => {
+    const bandId = 'w'+S.wavesLaunched+'g'+gi;
+    S.bands.set(bandId, { mode:'muster', nextEval:0, dest:null, officer:null, warnedRaid:false });
+    for (const type of g.comp) {
+      S.pendingSpawns.push({ at: S.t + delay, type, gx: g.x, gy: g.y, band: bandId });
+      delay += 18 / total;
+    }
+  });
+  S.groups = [];
+}
+function spawnEnemy(p) {
+  const st = ENEMY_TYPES[p.type];
+  const jitter = () => (Math.random()-.5)*40;
+  S.enemies.push({ type:p.type, ...st, hp:st.hp, maxHp:st.hp,
+                   x:p.gx+jitter(), y:p.gy+jitter(), band:p.band, target:null, retargetIn:0 });
+  S.fieldClear = false;
+}
+
+/* =================== BAND AI (officers & banditry) =================== */
+function bandAI() {
+  for (const [id, b] of S.bands) {
+    if (S.t < b.nextEval) continue;
+    b.nextEval = S.t + 3;
+    const members = S.enemies.filter(e => e.band === id);
+    const pending = S.pendingSpawns.some(p => p.band === id);
+    if (!members.length) { if (!pending) S.bands.delete(id); continue; }
+    if (pending) { b.mode = 'muster'; b.dest = null; continue; }   // gather at the spawn point first
+    const officers = members.filter(e => e.officer);
+    if (!officers.length) {
+      if (b.mode !== 'feral') {
+        b.mode = 'feral';
+        toast('🪓 A war band lost its officer — they charge mindlessly!', 'good');
+      }
+      continue;
+    }
+    b.officer = officers[0];
+    let cx=0, cy=0;
+    for (const m of members) { cx+=m.x; cy+=m.y; }
+    cx/=members.length; cy/=members.length;
+    /* strength assessment: everyone nearby counts, so bands accumulate into mobs.
+       The officer also scouts the OBJECTIVE (the keep) — no marching blind into a garrison. */
+    let us = 0;
+    for (const e of S.enemies) if ((e.x-cx)**2+(e.y-cy)**2 < 100*100) us += e.power;
+    const defenseAround = (x,y,r) => {
+      let p = 0;
+      for (const d of S.defenders) if ((d.x-x)**2+(d.y-y)**2 < r*r) p += DEF_STATS[d.kind].power;
+      if (!S.routed && (S.player.x-x)**2+(S.player.y-y)**2 < r*r) p += PLAYER_POWER;
+      return p;
+    };
+    const them = Math.max(defenseAround(cx, cy, 120), defenseAround(0, 0, 130));
+    const want = us >= ASSAULT_RATIO*them ? 'assault' : 'raid';
+    if (want !== b.mode) {
+      if (want === 'raid' && !b.warnedRaid) {
+        b.warnedRaid = true;
+        toast('🏴 A war band refuses battle — bandits are razing the countryside!', 'bad');
+      }
+      if (want === 'assault' && b.mode === 'raid')
+        toast('⚔️ The bandit mob has massed — they attack!', 'bad');
+      b.mode = want;
+    }
+    if (b.mode === 'raid') {
+      /* pick a soft target: owned cell away from your forces, preferring economy */
+      let best=null, bs=1e12;
+      for (const c of S.cells.values()) {
+        if (c.owner !== 1) continue;
+        let danger = false;
+        for (const d of S.defenders) if ((d.x-c.cx)**2+(d.y-c.cy)**2 < 70*70) { danger = true; break; }
+        if (!danger && !S.routed && (S.player.x-c.cx)**2+(S.player.y-c.cy)**2 < 60*60) danger = true;
+        if (danger) continue;
+        let score = Math.hypot(c.cx-cx, c.cy-cy);
+        if (c.feature || (c.structure && c.structure!=='keep')) score -= 150;
+        if (score < bs) { bs = score; best = c; }
+      }
+      b.dest = best ? { x:best.cx, y:best.cy } : null;   // null → lie low and accumulate
+    } else b.dest = null;
+  }
+}
+
+/* =================== BUILD ACTIONS =================== */
+function canAfford(c) { return S.supply >= (c.s||0) && S.iron >= (c.i||0) && S.stone >= (c.st||0); }
+function pay(c) { S.supply -= (c.s||0); S.iron -= (c.i||0); S.stone -= (c.st||0); }
+function playerCell() { return cellAt(S.player.x, S.player.y); }
+function requireOwnedConnected() {
+  const c = playerCell();
+  if (!c || c.owner!==1) { toast('You must stand in your own territory', 'bad'); return null; }
+  if (!c.connected) { toast('This area is cut off from the Keep — reconnect it first', 'bad'); return null; }
+  return c;
+}
+function placeDefender(kind) {
+  const cost = kind==='vet' ? { s:defCost(), i:10 } : { s:defCost() };
+  if (!canAfford(cost)) return toast('Not enough resources', 'bad');
+  if (kind==='vet' && !ownedConn(c=>c.structure==='smith').length)
+    return toast('Veterans need a connected Smithy', 'bad');
+  const c = requireOwnedConnected(); if (!c) return;
+  pay(cost);
+  const st = DEF_STATS[kind];
+  S.defenders.push({ kind, ...st, hp:st.hp, maxHp:st.hp, x:S.player.x, y:S.player.y,
+                     anchor:{x:S.player.x, y:S.player.y}, stance:'skirmish', moveTarget:null });
+  toast((kind==='vet'?'⚔️ Veteran':'🛡️ Defender') + ' deployed (next costs '+defCost()+' 🌾)', 'good');
+}
+function build(type) {
+  if (!canAfford(COSTS[type])) return toast('Not enough resources', 'bad');
+  const c = requireOwnedConnected(); if (!c) return;
+  if (type==='fort') {
+    if (c.fort) return toast('Already walled', 'bad');
+    pay(COSTS.fort); c.fort = true; c.wallHp = WALL_HP;
+    return toast('🧱 Wall raised — it blocks enemies until battered down', 'good');
+  }
+  if (c.structure) return toast('Something is already built here', 'bad');
+  if (type==='mine' && c.feature!=='iron') return toast('Mines must be built on an ⛰️ iron deposit', 'bad');
+  if (type==='quarry' && c.feature!=='stone') return toast('Quarries must be built on a 🪨 stone outcrop', 'bad');
+  if ((type==='smith'||type==='tower') && c.feature) return toast('Cannot build on a resource cell', 'bad');
+  pay(COSTS[type]); c.structure = type;
+  toast({mine:'⛏️ Mine built — iron will flow while connected',
+         quarry:'⚒️ Quarry built — stone will flow while connected',
+         smith:'🔥 Smithy built — veterans unlocked',
+         tower:'🗼 Watchtower raised — early warning on this flank'}[type], 'good');
+}
+$('bDef').onclick    = () => placeDefender('def');
+$('bVet').onclick    = () => placeDefender('vet');
+$('bMine').onclick   = () => build('mine');
+$('bQuarry').onclick = () => build('quarry');
+$('bSmith').onclick  = () => build('smith');
+$('bTower').onclick  = () => build('tower');
+$('bFort').onclick   = () => build('fort');
+
+/* =================== COMMANDING =================== */
+function troopsInEarshot() { return S.defenders.filter(d => dist(d, S.player) <= COMMAND_RANGE); }
+function showStanceBar(units) {
+  S.lastOrdered = units;
+  $('stanceBar').style.display = 'flex';
+  clearTimeout(showStanceBar._t);
+  showStanceBar._t = setTimeout(()=>{ $('stanceBar').style.display='none'; }, 8000);
+}
+function setStance(stance) {
+  for (const d of S.lastOrdered) d.stance = stance;
+  $('stanceBar').style.display = 'none';
+  toast(stance==='hold' ? '🛑 They will hold their ground' : '⚔️ They will engage enemies at will', 'good');
+}
+$('stHold').onclick  = () => setStance('hold');
+$('stSkirm').onclick = () => setStance('skirmish');
+$('btnLine').onclick = () => {
+  if (S.phase !== 'playing') return;
+  if (S.lineCmd) { S.lineCmd = null; $('btnLine').classList.remove('armed'); return toast('Command cancelled'); }
+  const units = troopsInEarshot();
+  if (!units.length) return toast('No troops within '+COMMAND_RANGE+' m to command', 'bad');
+  S.lineCmd = { units, p1: null };
+  $('btnLine').classList.add('armed');
+  toast('🚩 Commanding '+units.length+' troops — tap the FIRST end of their line');
+};
+function onMapClick(ev) {
+  if (S.phase !== 'playing') return;
+  const p = fromLL(ev.latlng.lat, ev.latlng.lng);
+  if (S.lineCmd) {
+    if (Math.hypot(p.x,p.y) > ARENA_R) return toast('Outside the battlefield', 'bad');
+    if (!S.lineCmd.p1) {
+      S.lineCmd.p1 = p;
+      return toast('Now tap the OTHER end of the line');
+    }
+    const { units, p1 } = S.lineCmd;
+    const n = units.length;
+    const vx = p.x-p1.x, vy = p.y-p1.y;
+    const sorted = [...units].sort((a,b)=>((a.x-p1.x)*vx+(a.y-p1.y)*vy)-((b.x-p1.x)*vx+(b.y-p1.y)*vy));
+    sorted.forEach((d,i) => {
+      const f = n===1 ? 0.5 : i/(n-1);
+      d.moveTarget = { x: p1.x+vx*f, y: p1.y+vy*f };
+      d.anchor = { ...d.moveTarget };
+      d.stance = 'skirmish';
+    });
+    S.lineCmd = null;
+    $('btnLine').classList.remove('armed');
+    toast('🚩 Line ordered — engaging at will unless you choose Hold', 'good');
+    showStanceBar(sorted);
+    return;
+  }
+  let best=null, bd=1e12;
+  for (const d of S.defenders) { const dd=dist2(d,p); if (dd<bd){bd=dd;best=d;} }
+  if (best && bd < 22*22) {
+    if (dist(best, S.player) > COMMAND_RANGE)
+      return toast('Too far to command — get within '+COMMAND_RANGE+' m of that unit', 'bad');
+    S.selDef = (S.selDef === best) ? null : best;
+    if (S.selDef) toast('Unit selected — tap where it should go', 'good');
+    return;
+  }
+  if (S.selDef) {
+    if (Math.hypot(p.x,p.y) > ARENA_R) return toast('Outside the battlefield', 'bad');
+    S.selDef.moveTarget = { x:p.x, y:p.y };
+    S.selDef.anchor = { x:p.x, y:p.y };
+    S.selDef.stance = 'skirmish';
+    toast('🛡️ Moving out — '+Math.round(dist(S.selDef,p))+' m march', 'good');
+    showStanceBar([S.selDef]);
+    S.selDef = null;
+  }
+}
+
+/* =================== SIM JOYSTICK =================== */
+const joy = { active:false, dx:0, dy:0 };
+(function initJoy(){
+  const zone = $('joyZone'), knob = $('joyKnob');
+  const R = 65;
+  function setKnob(dx,dy){ knob.style.left = (40+dx)+'px'; knob.style.top = (40+dy)+'px'; }
+  function handle(e){
+    const r = zone.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    let dx = t.clientX - (r.left+R), dy = t.clientY - (r.top+R);
+    const m = Math.hypot(dx,dy);
+    if (m > 45) { dx = dx/m*45; dy = dy/m*45; }
+    joy.dx = dx/45; joy.dy = dy/45;
+    setKnob(dx,dy);
+  }
+  function stop(){ joy.active=false; joy.dx=joy.dy=0; setKnob(0,0); }
+  zone.addEventListener('pointerdown', e=>{ joy.active=true; zone.setPointerCapture(e.pointerId); handle(e); });
+  zone.addEventListener('pointermove', e=>{ if(joy.active) handle(e); });
+  zone.addEventListener('pointerup', stop);
+  zone.addEventListener('pointercancel', stop);
+})();
+const keys = {};
+addEventListener('keydown', e=>keys[e.key]=true);
+addEventListener('keyup', e=>keys[e.key]=false);
+
+/* =================== GPS =================== */
+function startGPS() {
+  $('gpsStatus').textContent = 'Getting GPS fix…';
+  if (!navigator.geolocation) { $('gpsStatus').textContent = 'Geolocation not available in this browser.'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    if (pos.coords.accuracy > 50) {
+      $('gpsStatus').textContent = 'GPS accuracy is poor ('+Math.round(pos.coords.accuracy)+' m). Move to open sky… retrying';
+      setTimeout(startGPS, 2500); return;
+    }
+    startGame('gps', { lat: pos.coords.latitude, lng: pos.coords.longitude });
+    S.gpsWatch = navigator.geolocation.watchPosition(onFix, err => toast('GPS error: '+err.message,'bad'),
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+  }, err => { $('gpsStatus').textContent = 'GPS failed: ' + err.message +
+      ' — this page must be opened over https for GPS. Use the hosted link, or Simulator mode.'; },
+  { enableHighAccuracy: true, timeout: 20000 });
+}
+function onFix(pos) {
+  S.gpsAcc = pos.coords.accuracy;
+  if (pos.coords.accuracy > 40) return;
+  const p = fromLL(pos.coords.latitude, pos.coords.longitude);
+  const jump = dist(p, S.player);
+  if (S.lastFix && jump > 60) return;
+  if (S.phase==='playing') S.dist += Math.min(jump, 30);
+  S.player.x = p.x; S.player.y = p.y;
+  S.lastFix = pos.timestamp;
+}
+
+/* =================== GAME START / END =================== */
+function startGame(mode, origin) {
+  S.mode = mode; S.origin = origin;
+  $('menu').style.display = 'none';
+  ['hud','buildBar'].forEach(id => $(id).style.display = 'flex');
+  $('sideBtns').style.display = 'flex';
+  if (mode==='sim') { $('joyZone').style.display = 'block'; $('btnSpeed').style.display = 'block'; }
+  initMap([origin.lat, origin.lng]);
+  genWorld();
+  scheduleWave();
+  S.phase = 'playing';
+  S.startedAt = performance.now();
+  if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{});
+  banner('🏰 Defend the Keep', 2200);
+  toast('First wave in ~100s — go capture 🌾 grain fields!', 'good');
+  requestAnimationFrame(frame);
+}
+function endGame(won) {
+  S.phase = won ? 'won' : 'over';
+  $('endTitle').textContent = won ? '🏆 Victory!' : '💀 The Keep has fallen';
+  $('endSub').textContent = won ? 'You survived all '+S.wavesToWin+' waves and swept the field.' :
+    'You fell during wave '+S.wavesLaunched+'.';
+  const mins = (performance.now()-S.startedAt)/60000;
+  $('endStats').innerHTML =
+    '<div>Distance run</div><b>'+(S.dist/1000).toFixed(2)+' km</b>' +
+    '<div>Time</div><b>'+mins.toFixed(1)+' min</b>' +
+    '<div>Enemies defeated</div><b>'+S.kills+'</b>' +
+    '<div>Avg pace</div><b>'+(S.dist>100 ? (mins/(S.dist/1000)).toFixed(1)+' min/km' : '–')+'</b>';
+  $('btnEndless').style.display = won ? 'block' : 'none';
+  $('endScreen').style.display = 'flex';
+  if (!won && S.gpsWatch != null) navigator.geolocation.clearWatch(S.gpsWatch);
+}
+$('btnEndless').onclick = () => {
+  S.endless = true;
+  $('endScreen').style.display = 'none';
+  S.phase = 'playing';
+  S.nextWaveAt = S.t + 45;
+  scheduleWave();
+  banner('♾️ Endless mode — how far can you go?', 3000);
+  lastT = null;
+  requestAnimationFrame(frame);
+};
+
+/* =================== UPDATE =================== */
+let lastT = null;
+function frame(now) {
+  if (S.phase==='over' || S.phase==='won') return;
+  if (lastT == null) lastT = now;
+  const rawDt = Math.min((now-lastT)/1000, 0.1);
+  lastT = now;
+  if (S.phase==='playing') update(rawDt * (S.mode==='sim' ? S.timeScale : 1));
+  draw();
+  requestAnimationFrame(frame);
+}
+function moveEnemy(e, tx, ty, dt) {
+  const dl = Math.hypot(tx-e.x, ty-e.y) || 1;
+  const nx = e.x + (tx-e.x)/dl * e.speed * dt;
+  const ny = e.y + (ty-e.y)/dl * e.speed * dt;
+  const cHere = cellAt(e.x, e.y), nc = cellAt(nx, ny);
+  if (nc && nc!==cHere && nc.fort && nc.wallHp>0 && nc.owner===1) { hitWall(nc, e, dt); return; }
+  e.x = nx; e.y = ny;
+  if (nc && nc.owner===1 && !(nc.fort && nc.wallHp>0)) razeCell(nc, dt);
+}
+function update(dt) {
+  S.t += dt;
+
+  /* --- player movement (sim) --- */
+  if (S.mode==='sim') {
+    let dx = joy.dx, dy = joy.dy;
+    if (keys.ArrowUp||keys.w) dy=-1; if (keys.ArrowDown||keys.s) dy=1;
+    if (keys.ArrowLeft||keys.a) dx=-1; if (keys.ArrowRight||keys.d) dx=1;
+    const m = Math.hypot(dx,dy);
+    if (m>0.01) {
+      const step = 5.0 * Math.min(m,1) * dt;
+      S.player.x += dx/m*step; S.player.y += -dy/m*step;
+      S.dist += step;
+    }
+  }
+  const pr = Math.hypot(S.player.x, S.player.y);
+  if (pr > ARENA_R) { S.player.x *= ARENA_R/pr; S.player.y *= ARENA_R/pr; }
+
+  /* --- territory capture (not while routed) --- */
+  if (!S.routed) {
+    for (const c of S.cells.values()) {
+      if (c.owner===1) continue;
+      if (Math.hypot(c.cx-S.player.x, c.cy-S.player.y) > CAPTURE_RADIUS + CELL*0.5) continue;
+      if (neighbors8(c).some(n=>n.owner===1)) {
+        c.owner=1; c.integrity=100; S.connDirty=true;
+        if (c.feature==='grain') toast('🌾 Grain field captured!', 'good');
+        if (c.feature==='iron') toast('⛰️ Iron deposit captured — build a ⛏️ Mine here', 'good');
+        if (c.feature==='stone') toast('🪨 Stone outcrop captured — build a ⚒️ Quarry here', 'good');
+        if (c.feature==='spring') toast('⛲ Healing spring captured — troops nearby recover fast', 'good');
+      }
+    }
+  }
+
+  /* --- connectivity + economy --- */
+  S.connTimer -= dt;
+  if (S.connDirty && S.connTimer<=0) { recomputeConnectivity(); S.connTimer=0.5; }
+  for (const c of S.cells.values()) {
+    if (c.owner!==1 || !c.connected) continue;
+    if (c.feature==='grain') S.supply += RATES.grain*dt;
+    if (c.structure==='mine') S.iron += RATES.mine*dt;
+    if (c.structure==='quarry') S.stone += RATES.quarry*dt;
+  }
+  const springs = ownedConn(c=>c.feature==='spring');
+  const nearSpring = p => springs.some(sp => Math.hypot(sp.cx-p.x, sp.cy-p.y) < SPRING_R);
+
+  /* --- keep repair --- */
+  if (S.keepHp < KEEP_HP_MAX && S.supply > 1 && Math.hypot(S.player.x,S.player.y) < 50) {
+    const spend = Math.min(4*dt, S.supply-1, (KEEP_HP_MAX-S.keepHp)/3);
+    S.supply -= spend; S.keepHp = Math.min(KEEP_HP_MAX, S.keepHp + spend*3);
+  }
+
+  /* --- relentless wave clock --- */
+  checkReveals();
+  if (S.t >= S.nextWaveAt) {
+    launchWave();
+    if (S.endless || S.wavesLaunched < S.wavesToWin) {
+      scheduleWave();
+      S.nextWaveAt = S.t + WAVE_PERIOD;
+    } else S.nextWaveAt = Infinity;
+  }
+  for (let i=S.pendingSpawns.length-1; i>=0; i--)
+    if (S.t >= S.pendingSpawns[i].at) { spawnEnemy(S.pendingSpawns[i]); S.pendingSpawns.splice(i,1); }
+
+  /* --- band AI --- */
+  bandAI();
+
+  /* --- defender AI: marches, skirmishing, return to post --- */
+  for (const d of S.defenders) {
+    if (d.moveTarget) {
+      const dd = dist(d, d.moveTarget);
+      if (dd < 2) { d.moveTarget = null; continue; }
+      d.x += (d.moveTarget.x-d.x)/dd * DEF_MOVE_SPEED * dt;
+      d.y += (d.moveTarget.y-d.y)/dd * DEF_MOVE_SPEED * dt;
+      continue;
+    }
+    if (d.stance !== 'skirmish') continue;
+    let tgt=null, td=1e12;
+    for (const e of S.enemies) {
+      const da = dist2(e, d.anchor);
+      if (da < AGGRO_R*AGGRO_R) { const dd = dist2(d,e); if (dd<td){td=dd;tgt=e;} }
+    }
+    if (tgt && td > (d.range*0.8)*(d.range*0.8)) {
+      const dd = Math.sqrt(td);
+      d.x += (tgt.x-d.x)/dd * DEF_MOVE_SPEED * dt;
+      d.y += (tgt.y-d.y)/dd * DEF_MOVE_SPEED * dt;
+    } else if (!tgt) {
+      const da = dist(d, d.anchor);
+      if (da > 3) { d.x += (d.anchor.x-d.x)/da * DEF_MOVE_SPEED * dt;
+                    d.y += (d.anchor.y-d.y)/da * DEF_MOVE_SPEED * dt; }
+    }
+  }
+
+  /* --- enemies --- */
+  const keepPos = {x:0,y:0};
+  for (const e of S.enemies) {
+    const band = e.band ? S.bands.get(e.band) : null;
+    const mode = band ? band.mode : 'feral';
+
+    /* raiders keep their own economic targeting */
+    if (e.type==='raider' && (e.retargetIn -= dt) <= 0) {
+      e.retargetIn = 3;
+      let best=null, bd=1e12;
+      for (const c of S.cells.values()) {
+        if (c.owner===1 && (c.feature || (c.structure && c.structure!=='keep'))) {
+          const d2 = dist2(e,{x:c.cx,y:c.cy});
+          if (d2<bd){bd=d2;best=c;}
+        }
+      }
+      e.target = best ? {x:best.cx,y:best.cy} : null;
+    }
+
+    /* 1. an engaging defender: charge it / fight it */
+    let foe=null, fd=1e12;
+    for (const d of S.defenders) { const dd=dist2(e,d); if (dd<fd){fd=dd;foe=d;} }
+    const engageR = mode==='raid' ? 20 : 32;
+    if (foe && fd < engageR*engageR) {
+      if (fd > ENEMY_MELEE*ENEMY_MELEE) moveEnemy(e, foe.x, foe.y, dt);
+      else foe.hp -= e.dps*dt;
+      continue;
+    }
+
+    /* 2. the player */
+    const dp = dist(e, S.player);
+    if (!S.routed && dp < BG_RANGE && mode!=='raid') { S.playerHp -= e.dps*0.4*dt; continue; }
+    if (mode==='raid' && !S.routed && dp < 55) {                 // bandits refuse the fight
+      moveEnemy(e, e.x + (e.x-S.player.x)/(dp||1)*60, e.y + (e.y-S.player.y)/(dp||1)*60, dt);
+      continue;
+    }
+
+    /* 3. macro destination */
+    let dest = null;
+    if (e.type==='raider') {
+      dest = e.target || keepPos;
+    } else if (mode==='feral') {
+      dest = keepPos; let bestD = dist(e, keepPos);
+      if (foe) { const dd=Math.sqrt(fd); if (dd<bestD){ bestD=dd; dest={x:foe.x,y:foe.y}; } }
+      if (!S.routed && dp < bestD) dest = {x:S.player.x, y:S.player.y};
+    } else if (mode==='muster') {
+      dest = null;                                               // gathering at the spawn point
+    } else {
+      const off = band ? band.officer : null;
+      if (off && off.hp>0 && !e.officer && dist(e,off) > 55) dest = {x:off.x, y:off.y};
+      else if (mode==='raid') dest = band.dest;
+      else dest = keepPos;
+    }
+    if (!dest) {                                                 // holding: raze what you stand on
+      const ch = cellAt(e.x, e.y);
+      if (ch && ch.owner===1 && !(ch.fort && ch.wallHp>0)) razeCell(ch, dt);
+      continue;
+    }
+
+    /* 4. arrive / march */
+    if (dist(e, dest) < 14) {
+      if (Math.hypot(dest.x, dest.y) < 1) S.keepHp -= e.dps*dt;  // battering the keep
+      else {
+        const ch = cellAt(e.x, e.y);
+        if (ch && ch.owner===1 && !(ch.fort && ch.wallHp>0)) razeCell(ch, dt);
+        else e.retargetIn = Math.min(e.retargetIn, 0.5);
+      }
+      continue;
+    }
+    moveEnemy(e, dest.x, dest.y, dt);
+  }
+  if (S.keepHp <= 0) { endGame(false); return; }
+
+  /* --- player rout & recovery --- */
+  if (!S.routed && S.playerHp <= 0) {
+    S.playerHp = 0; S.routed = true;
+    banner('🩸 Your bodyguard is scattered!', 3000);
+    toast('Retreat! No aura or capturing until you recover (fastest at the Keep or a spring)', 'bad');
+  }
+  const calmPlayer = !S.enemies.some(e => dist2(e,S.player) < 60*60);
+  if (calmPlayer && S.playerHp < PLAYER_HP_MAX) {
+    const boost = (Math.hypot(S.player.x,S.player.y) < 50 || nearSpring(S.player)) ? 18 : 6;
+    S.playerHp = Math.min(PLAYER_HP_MAX, S.playerHp + boost*dt);
+  }
+  if (S.routed && S.playerHp >= PLAYER_HP_MAX*0.6) {
+    S.routed = false;
+    banner('🛡️ Bodyguard reformed!', 2500);
+  }
+
+  /* --- damage: bodyguard (focused) + defenders; healing --- */
+  if (!S.routed) {
+    const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE)
+      .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, BG_TARGETS);
+    for (const e of engaged) e.hp -= BG_DPS*dt;
+  }
+  for (const d of S.defenders) {
+    let tgt=null, td=1e12;
+    for (const e of S.enemies) { const dd=dist2(d,e); if (dd<td){td=dd;tgt=e;} }
+    const calm = !tgt || td > 60*60;
+    if (tgt && td < d.range*d.range)
+      tgt.hp -= d.dps * (tgt.armored ? d.armorMult : 1) * dt;
+    const spring = nearSpring(d);
+    if (calm) d.hp = Math.min(d.maxHp, d.hp + (spring?20:6)*dt);
+    else if (spring) d.hp = Math.min(d.maxHp, d.hp + 8*dt);
+  }
+  for (const c of S.cells.values()) {
+    if (!c.fort || c.wallHp>=WALL_HP) continue;
+    const pos = {x:c.cx, y:c.cy};
+    if (!S.enemies.some(e => dist2(e,pos) < 50*50))
+      c.wallHp = Math.min(WALL_HP, c.wallHp + (nearSpring(pos)?10:4)*dt);
+  }
+  for (let i=S.enemies.length-1;i>=0;i--) if (S.enemies[i].hp<=0) {
+    S.supply += S.enemies[i].bounty; S.kills++;
+    S.enemies.splice(i,1);
+  }
+  for (let i=S.defenders.length-1;i>=0;i--) if (S.defenders[i].hp<=0) {
+    if (S.selDef===S.defenders[i]) S.selDef=null;
+    S.defenders.splice(i,1);
+  }
+
+  /* --- field-clear + victory --- */
+  if (!S.enemies.length && !S.pendingSpawns.length) {
+    if (S.wavesLaunched >= S.wavesToWin && !S.endless) { endGame(true); return; }
+    if (!S.fieldClear && S.wavesLaunched > 0) {
+      S.fieldClear = true;
+      banner('✅ Field clear!', 2000);
+    }
+  }
+
+  if (S.follow) map.setView(toLL(S.player.x,S.player.y), map.getZoom(), {animate:false});
+  updateHUD();
+}
+function hitWall(c, e, dt) {
+  c.wallHp -= e.dps * (e.type==='brute' ? 2 : 1) * dt;
+  if (c.wallHp <= 0) { c.wallHp = 0; c.fort = false; toast('💥 A wall has been breached!', 'bad'); }
+}
+function razeCell(c, dt) {
+  c.integrity -= 25*dt;
+  if (c.integrity <= 0) {
+    c.owner = 0; c.integrity = 100; c.fort = false; c.wallHp = 0; S.connDirty = true;
+    if (c.structure && c.structure!=='keep') {
+      toast('💥 Your ' + c.structure + ' was destroyed!', 'bad');
+      c.structure = null;
+    }
+  }
+}
+let hudTick = 0;
+function updateHUD() {
+  if ((hudTick++ & 7) !== 0) return;
+  const nGrain = ownedConn(c=>c.feature==='grain').length;
+  const nMine = ownedConn(c=>c.structure==='mine').length;
+  const nQuarry = ownedConn(c=>c.structure==='quarry').length;
+  $('sHp').textContent = Math.max(0,Math.ceil(S.playerHp));
+  $('hpChip').classList.toggle('hurt', S.routed || S.playerHp < PLAYER_HP_MAX*0.4);
+  $('sSupply').textContent = Math.floor(S.supply);
+  $('rSupply').textContent = nGrain ? '+'+(nGrain*RATES.grain).toFixed(1)+'/s' : '';
+  $('sIron').textContent = Math.floor(S.iron);
+  $('rIron').textContent = nMine ? '+'+(nMine*RATES.mine).toFixed(1)+'/s' : '';
+  $('sStone').textContent = Math.floor(S.stone);
+  $('rStone').textContent = nQuarry ? '+'+(nQuarry*RATES.quarry).toFixed(1)+'/s' : '';
+  $('sKeep').textContent = Math.max(0,Math.ceil(S.keepHp));
+  const nxt = isFinite(S.nextWaveAt) ? Math.max(0,Math.ceil(S.nextWaveAt-S.t))+'s' : '—';
+  $('sWave').textContent = S.wavesLaunched + (S.endless ? '' : '/'+S.wavesToWin) + ' · next ' + nxt;
+  $('sDist').textContent = (S.dist/1000).toFixed(2)+' km';
+  $('cDef').textContent = defCost()+' 🌾';
+  $('cVet').textContent = defCost()+' 🌾 + 10 ⚙️';
+  const smithy = !!ownedConn(c=>c.structure==='smith').length;
+  const pc = playerCell();
+  $('bDef').classList.toggle('off', S.supply < defCost());
+  $('bVet').classList.toggle('off', S.supply < defCost() || S.iron < 10 || !smithy);
+  $('bMine').classList.toggle('off', !canAfford(COSTS.mine) || !(pc && pc.feature==='iron' && pc.owner===1));
+  $('bQuarry').classList.toggle('off', !canAfford(COSTS.quarry) || !(pc && pc.feature==='stone' && pc.owner===1));
+  $('bSmith').classList.toggle('off', !canAfford(COSTS.smith));
+  $('bTower').classList.toggle('off', !canAfford(COSTS.tower));
+  $('bFort').classList.toggle('off', !canAfford(COSTS.fort));
+}
+
+/* =================== RENDER =================== */
+function draw() {
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  if (!map || !S.origin) return;
+  const p0 = pt(0,0), p100 = pt(100,0);
+  const pxPerM = Math.abs(p100.x - p0.x) / 100;
+  const cellPx = CELL * pxPerM;
+  const onScreen = p => p.x>-40 && p.y>-40 && p.x<innerWidth+40 && p.y<innerHeight+40;
+
+  for (const c of S.cells.values()) {
+    const p = pt(c.cx, c.cy);
+    if (p.x < -cellPx || p.y < -cellPx || p.x > innerWidth+cellPx || p.y > innerHeight+cellPx) continue;
+    if (c.owner===1) {
+      ctx.fillStyle = c.connected ? 'rgba(34,197,94,0.28)' : 'rgba(148,163,90,0.30)';
+      ctx.fillRect(p.x-cellPx/2, p.y-cellPx/2, cellPx-1, cellPx-1);
+      if (c.integrity < 100) {
+        ctx.fillStyle = 'rgba(220,38,38,'+ (0.45*(1-c.integrity/100)) +')';
+        ctx.fillRect(p.x-cellPx/2, p.y-cellPx/2, cellPx-1, cellPx-1);
+      }
+      if (c.fort && c.wallHp>0) {
+        ctx.strokeStyle = '#78716c'; ctx.lineWidth = Math.max(3, cellPx*0.14);
+        ctx.strokeRect(p.x-cellPx/2+2, p.y-cellPx/2+2, cellPx-5, cellPx-5);
+        if (c.wallHp < WALL_HP) bar(p.x, p.y + cellPx*0.32, cellPx*0.7, c.wallHp/WALL_HP, '#a8a29e');
+      }
+    }
+  }
+
+  for (const c of ownedConn(cc=>cc.feature==='spring')) {
+    const p = pt(c.cx,c.cy);
+    if (!onScreen(p)) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, SPRING_R*pxPerM, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(56,189,248,0.08)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(56,189,248,0.35)'; ctx.lineWidth=1; ctx.setLineDash([4,6]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  ctx.beginPath();
+  ctx.arc(p0.x, p0.y, ARENA_R*pxPerM, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([8,8]);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  const pp = pt(S.player.x, S.player.y);
+  if (!S.routed) {
+    ctx.beginPath(); ctx.arc(pp.x, pp.y, BG_RANGE*pxPerM, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(59,130,246,0.13)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(59,130,246,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  if (S.lineCmd) {
+    ctx.beginPath(); ctx.arc(pp.x, pp.y, COMMAND_RANGE*pxPerM, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(251,146,60,0.6)'; ctx.lineWidth=2; ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
+    if (S.lineCmd.p1) {
+      const q = pt(S.lineCmd.p1.x, S.lineCmd.p1.y);
+      ctx.beginPath(); ctx.arc(q.x, q.y, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#fb923c'; ctx.fill();
+    }
+  }
+
+  const iconPx = Math.max(15, cellPx*0.62);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for (const c of S.cells.values()) {
+    const icon = (c.structure && c.structure!=='keep') ? STRUCT_ICONS[c.structure]
+               : c.feature ? FEATURE_ICONS[c.feature] : null;
+    if (!icon) continue;
+    const p = pt(c.cx, c.cy);
+    if (!onScreen(p)) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, iconPx*0.72, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.88)'; ctx.fill();
+    ctx.strokeStyle = c.owner===1 ? (c.connected ? '#16a34a' : '#a3a344') : 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = iconPx+'px sans-serif';
+    ctx.fillText(icon, p.x, p.y+1);
+  }
+
+  ctx.font = Math.max(20, cellPx*0.85)+'px sans-serif';
+  ctx.fillText('🏰', p0.x, p0.y);
+  bar(p0.x, p0.y - Math.max(16,cellPx*0.6), 40, S.keepHp/KEEP_HP_MAX, '#22c55e');
+
+  for (const g of S.groups) {
+    if (!g.revealed) continue;
+    const gp = pt(g.x, g.y);
+    ctx.save();
+    ctx.translate(clamp(gp.x, 30, innerWidth-30), clamp(gp.y, 90, innerHeight-110));
+    ctx.font = '26px sans-serif';
+    ctx.fillText('⚠️', 0, 0);
+    if (g.precise) { ctx.font='bold 12px sans-serif'; ctx.fillStyle='#fff';
+      ctx.strokeStyle='rgba(0,0,0,0.7)'; ctx.lineWidth=3;
+      ctx.strokeText(g.comp.length+' enemies', 0, 20); ctx.fillText(g.comp.length+' enemies', 0, 20); }
+    ctx.restore();
+  }
+
+  for (const d of S.defenders) {
+    const p = pt(d.x, d.y);
+    if (d.moveTarget) {
+      const tp = pt(d.moveTarget.x, d.moveTarget.y);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tp.x,tp.y);
+      ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(4,5*pxPerM), 0, Math.PI*2);
+    ctx.fillStyle = d.color; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+    if (d.stance==='hold') {
+      ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=1.5;
+      const r = Math.max(6,7*pxPerM);
+      ctx.strokeRect(p.x-r, p.y-r, 2*r, 2*r);
+    }
+    if (S.selDef===d) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(9,8*pxPerM), 0, Math.PI*2);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    bar(p.x, p.y-12, 22, d.hp/d.maxHp, '#4ade80');
+  }
+
+  for (const e of S.enemies) {
+    const p = pt(e.x, e.y);
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3, e.r*pxPerM), 0, Math.PI*2);
+    ctx.fillStyle = e.color; ctx.fill();
+    if (e.armored) { ctx.lineWidth=3; ctx.strokeStyle='#d1d5db'; ctx.stroke(); }
+    if (e.officer) {
+      ctx.font = 'bold 13px sans-serif';
+      ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
+      ctx.strokeText('⚑', p.x, p.y-20);
+      ctx.fillStyle = '#7f1d1d';
+      ctx.fillText('⚑', p.x, p.y-20);
+    }
+    bar(p.x, p.y-12, 20, e.hp/e.maxHp, '#f87171');
+  }
+
+  drawOffscreenArrows();
+
+  ctx.beginPath(); ctx.arc(pp.x, pp.y, 7, 0, Math.PI*2);
+  ctx.fillStyle = S.routed ? '#9ca3af' : '#2563eb'; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+  if (S.playerHp < PLAYER_HP_MAX)
+    bar(pp.x, pp.y-15, 28, S.playerHp/PLAYER_HP_MAX, S.routed ? '#f87171' : '#60a5fa');
+  if (S.mode==='gps' && S.gpsAcc) {
+    ctx.beginPath(); ctx.arc(pp.x, pp.y, S.gpsAcc*pxPerM, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(59,130,246,0.35)'; ctx.lineWidth=1; ctx.stroke();
+  }
+}
+function drawOffscreenArrows() {
+  const cx = innerWidth/2, cy = innerHeight/2;
+  const buckets = new Map();
+  for (const e of S.enemies) {
+    const p = pt(e.x, e.y);
+    if (p.x>0 && p.y>0 && p.x<innerWidth && p.y<innerHeight) continue;
+    const ang = Math.atan2(p.y-cy, p.x-cx);
+    const b = Math.round(ang / (Math.PI/8));
+    const cur = buckets.get(b) || { ang:0, n:0 };
+    cur.ang += ang; cur.n++;
+    buckets.set(b, cur);
+  }
+  for (const {ang, n} of buckets.values()) {
+    const a = ang/n;
+    const m = 46;
+    const t = Math.min(
+      Math.abs((a>-Math.PI/2 && a<Math.PI/2 ? innerWidth-m-cx : m-cx) / Math.cos(a) || 1e9),
+      Math.abs((a>0 ? innerHeight-m-110-cy : m+70-cy) / Math.sin(a) || 1e9));
+    const x = cx + Math.cos(a)*t, y = cy + Math.sin(a)*t;
+    ctx.save();
+    ctx.translate(x,y); ctx.rotate(a);
+    ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(-6,-8); ctx.lineTo(-6,8); ctx.closePath();
+    ctx.fillStyle = 'rgba(239,68,68,0.9)'; ctx.fill();
+    ctx.rotate(-a);
+    ctx.font='bold 11px sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.strokeStyle='rgba(0,0,0,0.7)'; ctx.lineWidth=3;
+    ctx.strokeText(n, 0, -16); ctx.fillText(n, 0, -16);
+    ctx.restore();
+  }
+}
+function bar(x, y, w, frac, color) {
+  ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-w/2, y-2.5, w, 5);
+  ctx.fillStyle=color; ctx.fillRect(x-w/2, y-2.5, w*clamp(frac,0,1), 5);
+}
+
+/* =================== MENU / CONTROLS =================== */
+for (const row of ['lenRow','diffRow']) {
+  $(row).addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    for (const p of $(row).querySelectorAll('.pill')) p.classList.remove('sel');
+    b.classList.add('sel');
+  });
+}
+function readMenuChoices() {
+  S.wavesToWin = +document.querySelector('#lenRow .pill.sel').dataset.waves;
+  S.diffMult = +document.querySelector('#diffRow .pill.sel').dataset.mult;
+}
+$('btnSim').onclick = () => {
+  readMenuChoices();
+  let started = false;
+  const fallback = () => { if (!started) { started=true; startGame('sim', { lat:45.5580, lng:-122.7448 }); } };
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => { if (!started) { started=true; startGame('sim', { lat:p.coords.latitude, lng:p.coords.longitude }); } },
+      fallback, { timeout: 3000, maximumAge: 600000 });
+    setTimeout(fallback, 3500);
+  } else fallback();
+};
+$('btnGps').onclick = () => { readMenuChoices(); startGPS(); };
+$('btnCenter').onclick = () => { S.follow = true; };
+$('btnSpeed').onclick = () => {
+  S.timeScale = S.timeScale === 1 ? 4 : 1;
+  $('btnSpeed').textContent = S.timeScale + '×';
+  toast('Simulation speed: ' + S.timeScale + '×');
+};
+$('btnPause').onclick = () => {
+  if (S.phase==='playing') { S.phase='paused'; $('btnPause').textContent='▶️'; banner('⏸️ Paused', 60000); }
+  else if (S.phase==='paused') { S.phase='playing'; $('btnPause').textContent='⏸️'; $('waveBanner').style.opacity=0; }
+};
+</script>
+</body>
+</html>
