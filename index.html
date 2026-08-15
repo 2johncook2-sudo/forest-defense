@@ -37,8 +37,8 @@
   .bbtn .cost { display: block; font-size: 10px; font-weight: 400; color: #ffd66e; }
   .bbtn:disabled, .bbtn.off { opacity: .38; border-color: #555; }
   .bbtn:active:not(.off) { transform: scale(.94); background: rgba(40,80,50,.95); }
-  #stanceBar { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0) + 96px); left: 0; right: 0; z-index: 930;
-               display: none; justify-content: center; gap: 8px; }
+  #stanceBar, #offBar { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0) + 96px); left: 0; right: 0;
+               z-index: 930; display: none; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 8px; }
   .stbtn { background: rgba(20,28,24,.95); border: 1px solid #6a5; color: #fff; border-radius: 12px;
            padding: 10px 14px; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
   .stbtn:active { transform: scale(.95); }
@@ -63,8 +63,8 @@
   .selrow .lbl { font-size: 13px; opacity: .8; width: 100%; margin-top: 6px; }
   .pill { background: transparent; color: #cfe9d6;
           border: 1.5px solid #2e5c40; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; }
-  #menu { justify-content: flex-start; padding-top: max(30px, env(safe-area-inset-top)); }
   .pill.sel { background: #1f7a3d; color: #fff; border-color: #2fa45a; }
+  #menu { justify-content: flex-start; padding-top: max(30px, env(safe-area-inset-top)); }
   .bigbtn { display: block; width: min(320px, 84vw); margin: 7px auto; padding: 14px; border-radius: 14px; border: none;
             font-size: 17px; font-weight: 700; background: #1f7a3d; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
   .bigbtn.alt { background: #23405c; }
@@ -72,8 +72,23 @@
   .howto { text-align: left; font-size: 13px; line-height: 1.55; opacity: .85; max-width: 430px; margin-top: 18px; }
   .howto b { color: #9fe3b0; }
   #gpsStatus { margin-top: 12px; font-size: 14px; color: #ffd66e; min-height: 20px; }
-  .statgrid { display: grid; grid-template-columns: auto auto; gap: 6px 18px; font-size: 16px; margin: 14px 0 20px; text-align: left; }
+  .statgrid { display: grid; grid-template-columns: auto auto; gap: 6px 18px; font-size: 16px; margin: 14px 0 12px; text-align: left; }
   .statgrid b { color: #ffd66e; }
+  /* ---------- advanced settings ---------- */
+  #advBox { width: min(430px, 92vw); margin-top: 10px; text-align: left;
+            background: rgba(0,0,0,.25); border: 1px solid #24503a; border-radius: 12px; padding: 8px 12px; }
+  #advBox summary { cursor: pointer; font-size: 14px; font-weight: 700; color: #9fe3b0; padding: 4px 0; }
+  .setrow { display: grid; grid-template-columns: 1fr 90px 52px; align-items: center; gap: 8px;
+            font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .setrow input[type=range] { width: 100%; accent-color: #2fa45a; }
+  .setrow .val { text-align: right; color: #ffd66e; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #btnResetCfg { margin-top: 8px; width: 100%; background: #374151; border: none; color: #fff;
+                 border-radius: 9px; padding: 8px; font-size: 13px; font-weight: 600; }
+  /* ---------- game log ---------- */
+  #endLog { width: min(430px, 90vw); max-height: 32vh; overflow-y: auto; text-align: left;
+            background: rgba(0,0,0,.35); border: 1px solid #24503a; border-radius: 10px;
+            padding: 8px 10px; font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
+  #endLog .lt { color: #86efac; font-variant-numeric: tabular-nums; margin-right: 6px; }
 </style>
 </head>
 <body>
@@ -96,6 +111,7 @@
 <div id="buildBar">
   <button class="bbtn" id="bDef"><span class="ico">🛡️</span>Defender<span class="cost" id="cDef">30 🌾</span></button>
   <button class="bbtn" id="bVet"><span class="ico">⚔️</span>Veteran<span class="cost" id="cVet">30 🌾 + 10 ⚙️</span></button>
+  <button class="bbtn" id="bOff"><span class="ico">🐎</span>Officer<span class="cost">80 🌾</span></button>
   <button class="bbtn" id="bMine"><span class="ico">⛏️</span>Mine<span class="cost">40 🌾</span></button>
   <button class="bbtn" id="bQuarry"><span class="ico">⚒️</span>Quarry<span class="cost">40 🌾</span></button>
   <button class="bbtn" id="bSmith"><span class="ico">🔥</span>Smithy<span class="cost">60 🌾</span></button>
@@ -107,9 +123,15 @@
   <button class="stbtn" id="stHold">🛑 Hold ground</button>
   <button class="stbtn" id="stSkirm">⚔️ Engage at will</button>
 </div>
+<div id="offBar">
+  <button class="stbtn" id="obEngage">📣 Rally troops there → engage</button>
+  <button class="stbtn" id="obHold">🛑 Rally troops there → hold</button>
+  <button class="stbtn" id="obRide">🐎 Just ride & claim land</button>
+</div>
 
 <div id="joyZone"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="sideBtns">
+  <button class="sbtn" id="btnOff">🐎</button>
   <button class="sbtn" id="btnLine">🚩</button>
   <button class="sbtn" id="btnCenter">🎯</button>
   <button class="sbtn" id="btnPause">⏸️</button>
@@ -118,7 +140,7 @@
 
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.4.1</div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.5</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Session length</span></div>
@@ -127,12 +149,18 @@
     <button class="pill sel" data-waves="10">Standard · 10 waves<br><small>~25 min</small></button>
     <button class="pill" data-waves="14">Epic · 14 waves<br><small>~40 min</small></button>
   </div>
-  <div class="selrow"><span class="lbl">Difficulty</span></div>
+  <div class="selrow"><span class="lbl">Difficulty (presets — fine-tune below)</span></div>
   <div class="selrow" id="diffRow">
-    <button class="pill" data-mult="0.7">Recruit</button>
-    <button class="pill sel" data-mult="1">Soldier</button>
-    <button class="pill" data-mult="1.35">Veteran</button>
+    <button class="pill" data-diff="recruit">Recruit</button>
+    <button class="pill sel" data-diff="soldier">Soldier</button>
+    <button class="pill" data-diff="veteran">Veteran</button>
   </div>
+
+  <details id="advBox">
+    <summary>⚙️ Advanced settings — tune any core parameter</summary>
+    <div id="setRows"></div>
+    <button id="btnResetCfg">↺ Reset to difficulty defaults</button>
+  </details>
 
   <div style="height:10px"></div>
   <button class="bigbtn" id="btnResume" style="display:none; background:#7c2d12">▶️ Resume last game</button>
@@ -140,22 +168,29 @@
   <button class="bigbtn alt" id="btnGps">📍 GPS mode<br><small style="font-weight:400">play for real — go outside</small></button>
   <div id="gpsStatus"></div>
   <div class="howto">
-    <b>How to play:</b> Walk/run through cells next to your territory to capture them (green).
-    Resources only produce while connected to your Keep by an unbroken green path: 🌾 <b>grain</b> gives supply,
-    ⛰️ <b>iron</b> (⛏️ Mine) enables veterans, 🪨 <b>stone</b> (⚒️ Quarry) enables walls, and a captured ⛲ <b>spring</b>
-    rapidly heals troops and walls nearby. Stand by your damaged Keep to repair it with supply.<br><br>
+    <b>How to play:</b> Walk/run through cells next to your territory to capture them — and so do your troops:
+    <b>any defender or officer you send marching claims the ground it crosses</b>. Fully <b>encircle</b> an area
+    and everything inside flips to you at once. Resources only produce while connected to your Keep by an unbroken
+    green path: 🌾 grain → supply, ⛰️ iron (⛏️ Mine) → veterans, 🪨 stone (⚒️ Quarry) → walls, ⛲ springs heal nearby
+    troops and walls. Stand by your damaged Keep to repair it with supply.<br><br>
+    <b>🐎 Your officer</b> rides ~3× faster than troops march. Tap the 🐎 button, tap a destination, then choose:
+    <b>rally the troops there</b> (he takes command of every defender within 100 m of that spot — engage or hold)
+    or <b>just ride & claim land</b>. He returns to your side when done; tap 🐎 mid-ride to recall him.
+    He can be killed — keep him off the front line. Recruit a replacement for 80 🌾.<br><br>
     <b>⏳ The clock is merciless.</b> Waves launch on a fixed countdown whether or not you've cleared the last one.
     Win by surviving all scheduled waves <i>and</i> sweeping the field clean.<br><br>
-    <b>❤️ You can be hurt.</b> Enemies caught in your aura stop marching and turn on <i>you</i>, and your bodyguard
-    can only focus a few at a time. At zero HP they scatter — no aura, no capturing — until you retreat and recover.<br><br>
-    <b>⚑ Officers & bandits.</b> Every 5th enemy is an officer who sizes up your strength: too strong to attack,
-    and his band turns <i>bandit</i> — dodging your troops, razing undefended land, and massing with other bands
-    until they're strong enough to strike. Kill the officer and the leaderless mob just charges whatever is closest.<br><br>
-    <b>🚩 Commanding troops:</b> defenders engage nearby enemies on their own and return to their post afterwards.
-    Tap 🚩 to command every defender within 60 m: tap two points and they form a line, then choose
-    <b>Hold ground</b> or <b>Engage at will</b> (the default). Or tap a single defender, then its destination.<br><br>
-    <b>💪 Brutes</b> shrug off basic defenders and smash walls — counter with ⚔️ veterans or walls + focused fire.
-    <b>🐺 Wolves</b> are fast. <b>🏴 Raiders</b> hunt your economy. 🗼 Watchtowers give early, precise warning.
+    <b>❤️ You can be hurt.</b> Enemies caught in your aura stop and fight <i>you</i>; your bodyguard focuses only a
+    few at a time. At zero HP they scatter — no aura, no capturing — until you recover (fastest at Keep/spring).<br><br>
+    <b>⚑ Officers & bandits.</b> Every 5th enemy is an officer. Bands too weak to win turn bandit — dodging your
+    troops, razing soft land, massing with other bands until strong enough to strike. Pennant colors show intent:
+    <span style="color:#f87171">red = attacking</span>, <span style="color:#cbd5e1">black = bandit</span>,
+    <span style="color:#fbbf24">amber = mustering</span>. Kill the officer and the mob charges mindlessly.<br><br>
+    <b>🚩 Commands:</b> tap 🚩 to order every defender within 60 m into a line (tap two points), then pick
+    <b>Hold ground</b> or <b>Engage at will</b>. Or tap one defender, then its destination — send it marching
+    through neutral ground to paint territory.<br><br>
+    <b>💪 Brutes</b> shrug off basic defenders and smash walls — use ⚔️ veterans. <b>🐺 Wolves</b> are fast.
+    <b>🏴 Raiders</b> hunt your economy. 🗼 Watchtowers give early, precise warning. 📜 A full battle log awaits
+    you at the end of each game.
   </div>
 </div>
 
@@ -163,32 +198,78 @@
   <h1 id="endTitle">Victory!</h1>
   <div class="sub" id="endSub"></div>
   <div class="statgrid" id="endStats"></div>
+  <div id="endLog"></div>
   <button class="bigbtn" id="btnEndless" style="display:none">⚔️ Keep playing (endless)</button>
   <button class="bigbtn alt" onclick="location.reload()">Play again</button>
 </div>
 
 <script>
 'use strict';
-/* =================== CONSTANTS =================== */
+/* =================== CONFIG (every core parameter is tunable) =================== */
+const DEFAULTS = {
+  wavePeriod: 110,   // s between wave launches
+  waveSize: 1.0,     // wave size multiplier
+  enemySpeed: 1.0,   // enemy speed multiplier
+  defSpeed: 1.2,     // defender march speed m/s
+  offSpeed: 3.5,     // officer horse speed m/s
+  startSupply: 60,
+  plenty: 2.0,       // resource nodes ×, production per node ÷ (total income constant)
+  bgPower: 1.0,      // bodyguard damage multiplier
+  playerHp: 250,
+  captureR: 20,      // your capture radius (m)
+  wallHp: 350,
+  defBase: 30,       // defender base cost
+  arenaR: 600,       // battlefield radius (m)
+  startOfficer: 1,   // 1 = begin with an officer
+};
+const DIFF_PRESETS = {
+  recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1 },
+  soldier: { waveSize: 1.0,  startSupply: 60, wavePeriod: 110, startOfficer: 1 },
+  veteran: { waveSize: 1.35, startSupply: 45, wavePeriod: 95,  startOfficer: 0 },
+};
+const SETTING_DEFS = [
+  ['wavePeriod',  'Wave interval (s)',            60, 180, 5],
+  ['waveSize',    'Wave size ×',                  0.4, 2.5, 0.05],
+  ['enemySpeed',  'Enemy speed ×',                0.5, 2, 0.05],
+  ['defSpeed',    'Defender march speed (m/s)',   0.6, 3, 0.1],
+  ['offSpeed',    'Officer horse speed (m/s)',    2, 6, 0.25],
+  ['startSupply', 'Starting supply',              20, 200, 5],
+  ['plenty',      'Resource nodes × (yield ÷)',   0.5, 3, 0.25],
+  ['bgPower',     'Bodyguard power ×',            0.5, 2, 0.1],
+  ['playerHp',    'Your max HP',                  100, 500, 10],
+  ['captureR',    'Your capture radius (m)',      10, 40, 2],
+  ['wallHp',      'Wall HP',                      100, 800, 25],
+  ['defBase',     'Defender base cost (🌾)',      15, 60, 5],
+  ['arenaR',      'Battlefield radius (m)',       400, 800, 50],
+  ['startOfficer','Start with an officer (0/1)',  0, 1, 1],
+];
+let CFG = (() => { try { const c = JSON.parse(localStorage.getItem('fdConfig2'));
+                        if (c) return { ...DEFAULTS, ...c }; } catch(e){} return { ...DEFAULTS }; })();
+function storeConfig(){ try { localStorage.setItem('fdConfig2', JSON.stringify(CFG)); } catch(e){} }
+
+/* live-tunable parameters (set from CFG at game start / resume) */
+let ARENA_R = 600, WAVE_PERIOD = 110, DEF_MOVE_SPEED = 1.2, WALL_HP = 350,
+    DEF_BASE = 30, PLAYER_HP_MAX = 250, CAPTURE_RADIUS = 20,
+    ENEMY_SPD = 1, BG_MULT = 1, PLENTY = 2, OFF_SPEED = 3.5;
+function applyConfig(c) {
+  ARENA_R = c.arenaR; WAVE_PERIOD = c.wavePeriod; DEF_MOVE_SPEED = c.defSpeed;
+  WALL_HP = c.wallHp; DEF_BASE = c.defBase; PLAYER_HP_MAX = c.playerHp;
+  CAPTURE_RADIUS = c.captureR; ENEMY_SPD = c.enemySpeed; BG_MULT = c.bgPower;
+  PLENTY = c.plenty; OFF_SPEED = c.offSpeed;
+}
+
+/* =================== FIXED CONSTANTS =================== */
 const CELL = 30;
-const ARENA_R = 600;
-const RES_MAX = 430;
 const KEEP_HP_MAX = 600;
-const PLAYER_HP_MAX = 250;
-const BG_RANGE = 35;                  // aura: enemies inside stop and fight YOU
-const BG_DPS = 25, BG_TARGETS = 3;    // bodyguard focuses up to 3 enemies
-const CAPTURE_RADIUS = 20;
+const BG_RANGE = 35, BG_DPS = 25, BG_TARGETS = 3;
 const COMMAND_RANGE = 60;
-const DEF_MOVE_SPEED = 1.2;
-const AGGRO_R = 100;                  // skirmishers engage enemies this close to their post
-const ENEMY_MELEE = 15;               // enemies attack units/you from this range
-const WALL_HP = 350;
+const AGGRO_R = 100;
+const ENEMY_MELEE = 15;
 const SPRING_R = 90;
-const WAVE_PERIOD = 110;              // relentless: next wave launches on this clock, always
-const COSTS = { mine:{s:40}, quarry:{s:40}, smith:{s:60}, tower:{s:40}, fort:{s:15,st:15} };
-const DEF_BASE = 30, DEF_SCALE = 2;
-const RATES = { grain:0.5, mine:0.4, quarry:0.3 };
-/* Stats tuned to the spec's calibration table — see FOREST_DEFENSE_SPEC.md */
+const OFFICER_HP = 150, OFFICER_COST = 80, RALLY_R = 100;
+const COSTS = { mine:{s:40}, quarry:{s:40}, smith:{s:60}, tower:{s:40}, fort:{s:15,st:15}, officer:{s:OFFICER_COST} };
+const DEF_SCALE = 2;
+const RATES = { grain:0.5, mine:0.4, quarry:0.3 };   // per node at plenty ×1
 const ENEMY_TYPES = {
   grunt:   { hp:60,  speed:1.9, dps:9,  armored:false, r:5, color:'#e04b3a', bounty:1, power:1   },
   wolf:    { hp:34,  speed:3.4, dps:10, armored:false, r:4, color:'#f59e0b', bounty:1, power:0.8 },
@@ -200,8 +281,8 @@ const DEF_STATS = {
   def: { hp:100, dps:10, range:22, armorMult:0.15, color:'#3b82f6', power:1.2 },
   vet: { hp:220, dps:32, range:25, armorMult:1.0,  color:'#facc15', power:2.6 },
 };
-const PLAYER_POWER = 5;             // the officer's estimate of what YOU are worth
-const ASSAULT_RATIO = 1.5;          // bands need this much overmatch to commit
+const PLAYER_POWER = 5;
+const ASSAULT_RATIO = 1.5;
 const FEATURE_ICONS = { grain:'🌾', iron:'⛰️', stone:'🪨', spring:'⛲' };
 const STRUCT_ICONS  = { mine:'⛏️', quarry:'⚒️', smith:'🔥', tower:'🗼' };
 
@@ -210,17 +291,20 @@ const S = {
   phase: 'menu', mode: null, t: 0,
   origin: null,
   player: { x:0, y:0 },
-  playerHp: PLAYER_HP_MAX, routed: false,
+  playerHp: 250, routed: false,
   supply: 60, iron: 0, stone: 0, keepHp: KEEP_HP_MAX,
   dist: 0, kills: 0, startedAt: 0,
   cells: new Map(),
   defenders: [], enemies: [],
+  officer: null, offCmd: null,
   selDef: null, lineCmd: null, lastOrdered: [],
   wavesLaunched: 0, wavesToWin: 10, diffMult: 1, endless: false,
   nextWaveAt: 100, fieldClear: true,
   groups: [], pendingSpawns: [],
   bands: new Map(),
   connDirty: true, connTimer: 0,
+  encloseDirty: false, encloseTimer: 0,
+  log: [], keepMile: 100,
   follow: true, timeScale: 1,
   gpsWatch: null, gpsAcc: null, lastFix: null,
 };
@@ -232,6 +316,8 @@ const dist = (a,b) => Math.sqrt(dist2(a,b));
 const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
 const key = (i,j) => i+','+j;
 const defCost = () => DEF_BASE + DEF_SCALE * S.defenders.length;
+const fmtT = s => Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+function logEvent(msg) { S.log.push([Math.round(S.t), msg]); if (S.log.length > 400) S.log.shift(); }
 function toLL(x, y) {
   const lat = S.origin.lat + y / 111320;
   const lng = S.origin.lng + x / (111320 * Math.cos(S.origin.lat * Math.PI/180));
@@ -293,20 +379,21 @@ function genWorld() {
   genGrid();
   for (const c of S.cells.values()) if (Math.hypot(c.cx,c.cy) <= 58) c.owner = 1;
   const placed = [];
+  const sep = 80 / Math.sqrt(PLENTY);
   function place(feature, count, rMin, rMax) {
     let tries = 0;
-    while (count > 0 && tries++ < 500) {
+    while (count > 0 && tries++ < 800) {
       const a = Math.random()*Math.PI*2, r = rMin + Math.random()*(rMax-rMin);
       const c = cellAt(Math.cos(a)*r, Math.sin(a)*r);
       if (!c || c.feature || c.structure) continue;
-      if (placed.some(p => Math.hypot(p.cx-c.cx, p.cy-c.cy) < 80)) continue;
+      if (placed.some(p => Math.hypot(p.cx-c.cx, p.cy-c.cy) < sep)) continue;
       c.feature = feature; placed.push(c); count--;
     }
   }
-  place('grain', 6, 100, 330);
-  place('iron', 3, 180, RES_MAX);
-  place('stone', 3, 150, RES_MAX);
-  place('spring', 2, 140, 380);
+  place('grain',  Math.max(2, Math.round(6*PLENTY)), 100, ARENA_R*0.55);
+  place('iron',   Math.max(1, Math.round(3*PLENTY)), 180, ARENA_R*0.72);
+  place('stone',  Math.max(1, Math.round(3*PLENTY)), 150, ARENA_R*0.72);
+  place('spring', Math.max(1, Math.round(2*Math.sqrt(PLENTY))), 140, ARENA_R*0.63);
   S.connDirty = true;
 }
 function neighbors8(c) {
@@ -331,6 +418,43 @@ function recomputeConnectivity() {
 }
 const ownedConn = pred => [...S.cells.values()].filter(c => c.owner===1 && c.connected && pred(c));
 
+/* capture by any friendly unit walking through a cell (adjacent to owned territory) */
+function unitCapture(u) {
+  const c = cellAt(u.x, u.y);
+  if (!c || c.owner === 1) return;
+  if (!neighbors8(c).some(n => n.owner === 1)) return;
+  c.owner = 1; c.integrity = 100;
+  S.connDirty = true; S.encloseDirty = true;
+  if (c.feature) {
+    toast(FEATURE_ICONS[c.feature]+' '+c.feature+' claimed by your troops!', 'good');
+    logEvent('🚶 Troops claimed a '+c.feature+' node');
+  }
+}
+/* encirclement: neutral pockets sealed off from the boundary flip to you */
+function processEnclosure() {
+  const seen = new Set(), q = [];
+  for (const c of S.cells.values())
+    if (c.owner !== 1 && Math.hypot(c.cx, c.cy) > ARENA_R - CELL*1.6) { seen.add(c); q.push(c); }
+  while (q.length) {
+    const c = q.pop();
+    for (const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const n = S.cells.get(key(c.i+di, c.j+dj));
+      if (n && n.owner !== 1 && !seen.has(n)) { seen.add(n); q.push(n); }
+    }
+  }
+  let captured = 0;
+  for (const c of S.cells.values())
+    if (c.owner !== 1 && !seen.has(c)) {
+      c.owner = 1; c.integrity = 100; captured++;
+      if (c.feature) logEvent('⭕ Encircled a '+c.feature+' node');
+    }
+  if (captured) {
+    S.connDirty = true;
+    if (captured >= 3) { toast('⭕ Encircled! +'+captured+' cells captured', 'good');
+                         logEvent('⭕ Encirclement captured '+captured+' cells'); }
+  }
+}
+
 /* =================== WAVES (relentless clock) =================== */
 function scheduleWave() {
   const n = S.wavesLaunched + 1;
@@ -353,7 +477,6 @@ function scheduleWave() {
     const count = g === weights.length-1 ? comp.length - idx : Math.max(1, Math.round(total*w));
     const slice = comp.slice(idx, idx+count); idx += slice.length;
     if (!slice.length) return;
-    // every 5th soldier is an officer, slipped in at random positions
     const nOff = Math.floor(slice.length/5) || (slice.length>=4 ? 1 : 0);
     for (let k=0;k<nOff;k++) slice.splice(Math.floor(Math.random()*slice.length), 0, 'officer');
     const a = angles[g];
@@ -383,8 +506,10 @@ function compass(a) {
 function launchWave() {
   S.wavesLaunched++;
   banner('⚔️ WAVE ' + S.wavesLaunched);
-  let delay = 0;
   const total = S.groups.reduce((s,g)=>s+g.comp.length,0) || 1;
+  logEvent('⚔️ Wave '+S.wavesLaunched+' launched — '+total+' enemies in '+S.groups.length+
+           (S.groups.length>1?' groups':' group')+' ('+S.groups.map(g=>compass(g.angle)).join(', ')+')');
+  let delay = 0;
   S.groups.forEach((g, gi) => {
     const bandId = 'w'+S.wavesLaunched+'g'+gi;
     S.bands.set(bandId, { mode:'muster', nextEval:0, dest:null, officer:null, warnedRaid:false });
@@ -398,7 +523,7 @@ function launchWave() {
 function spawnEnemy(p) {
   const st = ENEMY_TYPES[p.type];
   const jitter = () => (Math.random()-.5)*40;
-  S.enemies.push({ type:p.type, ...st, hp:st.hp, maxHp:st.hp,
+  S.enemies.push({ type:p.type, ...st, hp:st.hp, maxHp:st.hp, speed: st.speed*ENEMY_SPD,
                    x:p.gx+jitter(), y:p.gy+jitter(), band:p.band, target:null, retargetIn:0 });
   S.fieldClear = false;
 }
@@ -411,12 +536,13 @@ function bandAI() {
     const members = S.enemies.filter(e => e.band === id);
     const pending = S.pendingSpawns.some(p => p.band === id);
     if (!members.length) { if (!pending) S.bands.delete(id); continue; }
-    if (pending) { b.mode = 'muster'; b.dest = null; continue; }   // gather at the spawn point first
+    if (pending) { b.mode = 'muster'; b.dest = null; continue; }
     const officers = members.filter(e => e.officer);
     if (!officers.length) {
       if (b.mode !== 'feral') {
         b.mode = 'feral';
         toast('🪓 A war band lost its officer — they charge mindlessly!', 'good');
+        logEvent('🪓 Enemy band went feral (officer dead)');
       }
       continue;
     }
@@ -424,13 +550,12 @@ function bandAI() {
     let cx=0, cy=0;
     for (const m of members) { cx+=m.x; cy+=m.y; }
     cx/=members.length; cy/=members.length;
-    /* strength assessment: everyone nearby counts, so bands accumulate into mobs.
-       The officer also scouts the OBJECTIVE (the keep) — no marching blind into a garrison. */
     let us = 0;
     for (const e of S.enemies) if ((e.x-cx)**2+(e.y-cy)**2 < 100*100) us += e.power;
     const defenseAround = (x,y,r) => {
       let p = 0;
       for (const d of S.defenders) if ((d.x-x)**2+(d.y-y)**2 < r*r) p += DEF_STATS[d.kind].power;
+      if (S.officer && (S.officer.x-x)**2+(S.officer.y-y)**2 < r*r) p += 1.5;
       if (!S.routed && (S.player.x-x)**2+(S.player.y-y)**2 < r*r) p += PLAYER_POWER;
       return p;
     };
@@ -440,13 +565,15 @@ function bandAI() {
       if (want === 'raid' && !b.warnedRaid) {
         b.warnedRaid = true;
         toast('🏴 A war band refuses battle — bandits are razing the countryside!', 'bad');
+        logEvent('🏴 Enemy band turned bandit');
       }
-      if (want === 'assault' && b.mode === 'raid')
+      if (want === 'assault' && b.mode === 'raid') {
         toast('⚔️ The bandit mob has massed — they attack!', 'bad');
+        logEvent('⚔️ Bandit mob massed and attacked');
+      }
       b.mode = want;
     }
     if (b.mode === 'raid') {
-      /* pick a soft target: owned cell away from your forces, preferring economy */
       let best=null, bs=1e12;
       for (const c of S.cells.values()) {
         if (c.owner !== 1) continue;
@@ -458,7 +585,7 @@ function bandAI() {
         if (c.feature || (c.structure && c.structure!=='keep')) score -= 150;
         if (score < bs) { bs = score; best = c; }
       }
-      b.dest = best ? { x:best.cx, y:best.cy } : null;   // null → lie low and accumulate
+      b.dest = best ? { x:best.cx, y:best.cy } : null;
     } else b.dest = null;
   }
 }
@@ -483,7 +610,17 @@ function placeDefender(kind) {
   const st = DEF_STATS[kind];
   S.defenders.push({ kind, ...st, hp:st.hp, maxHp:st.hp, x:S.player.x, y:S.player.y,
                      anchor:{x:S.player.x, y:S.player.y}, stance:'skirmish', moveTarget:null });
+  logEvent((kind==='vet'?'⚔️ Veteran':'🛡️ Defender')+' deployed ('+S.defenders.length+' fielded)');
   toast((kind==='vet'?'⚔️ Veteran':'🛡️ Defender') + ' deployed (next costs '+defCost()+' 🌾)', 'good');
+}
+function buyOfficer() {
+  if (S.officer) return toast('You already have an officer', 'bad');
+  if (!canAfford(COSTS.officer)) return toast('Not enough supply ('+OFFICER_COST+' 🌾)', 'bad');
+  const c = requireOwnedConnected(); if (!c) return;
+  pay(COSTS.officer);
+  S.officer = { x:S.player.x+6, y:S.player.y+6, hp:OFFICER_HP, mode:'idle', target:null, order:null };
+  logEvent('🐎 Officer recruited');
+  toast('🐎 Officer recruited — tap the 🐎 button to send him out', 'good');
 }
 function build(type) {
   if (!canAfford(COSTS[type])) return toast('Not enough resources', 'bad');
@@ -491,6 +628,7 @@ function build(type) {
   if (type==='fort') {
     if (c.fort) return toast('Already walled', 'bad');
     pay(COSTS.fort); c.fort = true; c.wallHp = WALL_HP;
+    logEvent('🧱 Wall raised');
     return toast('🧱 Wall raised — it blocks enemies until battered down', 'good');
   }
   if (c.structure) return toast('Something is already built here', 'bad');
@@ -498,6 +636,7 @@ function build(type) {
   if (type==='quarry' && c.feature!=='stone') return toast('Quarries must be built on a 🪨 stone outcrop', 'bad');
   if ((type==='smith'||type==='tower') && c.feature) return toast('Cannot build on a resource cell', 'bad');
   pay(COSTS[type]); c.structure = type;
+  logEvent({mine:'⛏️ Mine built', quarry:'⚒️ Quarry built', smith:'🔥 Smithy built', tower:'🗼 Watchtower raised'}[type]);
   toast({mine:'⛏️ Mine built — iron will flow while connected',
          quarry:'⚒️ Quarry built — stone will flow while connected',
          smith:'🔥 Smithy built — veterans unlocked',
@@ -505,6 +644,7 @@ function build(type) {
 }
 $('bDef').onclick    = () => placeDefender('def');
 $('bVet').onclick    = () => placeDefender('vet');
+$('bOff').onclick    = buyOfficer;
 $('bMine').onclick   = () => build('mine');
 $('bQuarry').onclick = () => build('quarry');
 $('bSmith').onclick  = () => build('smith');
@@ -528,6 +668,7 @@ $('stHold').onclick  = () => setStance('hold');
 $('stSkirm').onclick = () => setStance('skirmish');
 $('btnLine').onclick = () => {
   if (S.phase !== 'playing') return;
+  S.offCmd = null; $('offBar').style.display='none'; $('btnOff').classList.remove('armed');
   if (S.lineCmd) { S.lineCmd = null; $('btnLine').classList.remove('armed'); return toast('Command cancelled'); }
   const units = troopsInEarshot();
   if (!units.length) return toast('No troops within '+COMMAND_RANGE+' m to command', 'bad');
@@ -535,9 +676,47 @@ $('btnLine').onclick = () => {
   $('btnLine').classList.add('armed');
   toast('🚩 Commanding '+units.length+' troops — tap the FIRST end of their line');
 };
+/* --- officer command flow: 🐎 → destination → order --- */
+$('btnOff').onclick = () => {
+  if (S.phase !== 'playing') return;
+  S.lineCmd = null; $('btnLine').classList.remove('armed');
+  if (!S.officer) return toast('No officer — recruit one for '+OFFICER_COST+' 🌾 (build bar)', 'bad');
+  if (S.offCmd) { S.offCmd = null; $('offBar').style.display='none'; $('btnOff').classList.remove('armed');
+                  return toast('Officer command cancelled'); }
+  if (S.officer.mode !== 'idle') {
+    S.officer.mode = 'returning'; S.officer.target = null; S.officer.order = null;
+    return toast('🐎 Officer recalled to your side');
+  }
+  S.offCmd = { dest: null };
+  $('btnOff').classList.add('armed');
+  toast('🐎 Tap where the officer should ride');
+};
+function officerOrder(order) {
+  if (!S.offCmd || !S.offCmd.dest || !S.officer) return;
+  S.officer.mode = 'riding';
+  S.officer.target = S.offCmd.dest;
+  S.officer.order = order;                          // 'skirmish' | 'hold' | null
+  const m = Math.round(dist(S.officer, S.offCmd.dest));
+  logEvent('🐎 Officer dispatched '+m+' m'+(order ? ' to rally troops ('+(order==='hold'?'hold':'engage')+')' : ' to claim land'));
+  toast('🐎 Officer riding out — '+m+' m', 'good');
+  S.offCmd = null;
+  $('offBar').style.display = 'none';
+  $('btnOff').classList.remove('armed');
+}
+$('obEngage').onclick = () => officerOrder('skirmish');
+$('obHold').onclick   = () => officerOrder('hold');
+$('obRide').onclick   = () => officerOrder(null);
 function onMapClick(ev) {
   if (S.phase !== 'playing') return;
   const p = fromLL(ev.latlng.lat, ev.latlng.lng);
+  /* officer destination */
+  if (S.offCmd) {
+    if (Math.hypot(p.x,p.y) > ARENA_R) return toast('Outside the battlefield', 'bad');
+    S.offCmd.dest = p;
+    $('offBar').style.display = 'flex';
+    return;
+  }
+  /* line-command */
   if (S.lineCmd) {
     if (Math.hypot(p.x,p.y) > ARENA_R) return toast('Outside the battlefield', 'bad');
     if (!S.lineCmd.p1) {
@@ -556,17 +735,19 @@ function onMapClick(ev) {
     });
     S.lineCmd = null;
     $('btnLine').classList.remove('armed');
+    logEvent('🚩 '+n+' troops ordered into a line');
     toast('🚩 Line ordered — engaging at will unless you choose Hold', 'good');
     showStanceBar(sorted);
     return;
   }
+  /* single-unit select / order */
   let best=null, bd=1e12;
   for (const d of S.defenders) { const dd=dist2(d,p); if (dd<bd){bd=dd;best=d;} }
   if (best && bd < 22*22) {
     if (dist(best, S.player) > COMMAND_RANGE)
       return toast('Too far to command — get within '+COMMAND_RANGE+' m of that unit', 'bad');
     S.selDef = (S.selDef === best) ? null : best;
-    if (S.selDef) toast('Unit selected — tap where it should go', 'good');
+    if (S.selDef) toast('Unit selected — tap where it should go (it claims land as it marches)', 'good');
     return;
   }
   if (S.selDef) {
@@ -632,7 +813,7 @@ function onFix(pos) {
   S.lastFix = pos.timestamp;
 }
 
-/* =================== SAVE / RESUME (tab-death insurance for real runs) =================== */
+/* =================== SAVE / RESUME =================== */
 const SAVE_KEY = 'forestDefenseSave1';
 let wakeLock = null;
 async function requestWake() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
@@ -644,13 +825,15 @@ function saveGame() {
       if (c.owner===1 || c.feature || (c.structure && c.structure!=='keep') || c.fort)
         cells.push([c.i, c.j, c.owner, c.feature, c.structure, c.fort?1:0,
                     Math.round(c.wallHp), Math.round(c.integrity)]);
-    const sv = { v:4, at: Date.now(), mode:S.mode, origin:S.origin, t:S.t,
+    const sv = { v:5, at: Date.now(), cfg: CFG, mode:S.mode, origin:S.origin, t:S.t,
       player:{x:S.player.x, y:S.player.y}, hp:S.playerHp, routed:S.routed?1:0,
       supply:S.supply, iron:S.iron, stone:S.stone, keep:S.keepHp,
       dist:S.dist, kills:S.kills, elapsedMs: performance.now()-S.startedAt,
       wl:S.wavesLaunched, ww:S.wavesToWin, dm:S.diffMult, endless:S.endless?1:0,
       nextIn: isFinite(S.nextWaveAt) ? +(S.nextWaveAt-S.t).toFixed(1) : null,
-      cells,
+      cells, log: S.log.slice(-400), keepMile: S.keepMile,
+      off: S.officer ? { x:Math.round(S.officer.x), y:Math.round(S.officer.y), hp:Math.round(S.officer.hp),
+                         mode:S.officer.mode, target:S.officer.target, order:S.officer.order } : null,
       defs: S.defenders.map(d=>[d.kind, Math.round(d.x), Math.round(d.y), Math.round(d.hp),
                                 Math.round(d.anchor.x), Math.round(d.anchor.y), d.stance==='hold'?1:0]),
       foes: S.enemies.map(e=>[e.type, Math.round(e.x), Math.round(e.y), Math.round(e.hp), e.band]),
@@ -664,11 +847,13 @@ function saveGame() {
 function loadSave() {
   try {
     const sv = JSON.parse(localStorage.getItem(SAVE_KEY));
-    return (sv && sv.v===4 && Date.now()-sv.at < 6*3600e3) ? sv : null;
+    return (sv && sv.v===5 && Date.now()-sv.at < 6*3600e3) ? sv : null;
   } catch(e){ return null; }
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch(e){} }
 function resumeGame(sv) {
+  CFG = { ...DEFAULTS, ...(sv.cfg||{}) };
+  applyConfig(CFG);
   S.mode = sv.mode; S.origin = sv.origin;
   $('menu').style.display = 'none';
   ['hud','buildBar'].forEach(id => $(id).style.display = 'flex');
@@ -690,6 +875,9 @@ function resumeGame(sv) {
   S.wavesLaunched = sv.wl; S.wavesToWin = sv.ww; S.diffMult = sv.dm; S.endless = !!sv.endless;
   S.nextWaveAt = sv.nextIn == null ? Infinity : sv.t + sv.nextIn;
   S.startedAt = performance.now() - (sv.elapsedMs || 0);
+  S.log = sv.log || []; S.keepMile = sv.keepMile == null ? 100 : sv.keepMile;
+  S.officer = sv.off ? { x:sv.off.x, y:sv.off.y, hp:sv.off.hp, mode:sv.off.mode,
+                         target:sv.off.target, order:sv.off.order } : null;
   S.defenders = sv.defs.map(([kind,x,y,hp,ax,ay,hold]) => {
     const st = DEF_STATS[kind];
     return { kind, ...st, hp, maxHp:st.hp, x, y, anchor:{x:ax,y:ay},
@@ -697,7 +885,7 @@ function resumeGame(sv) {
   });
   S.enemies = sv.foes.map(([type,x,y,hp,band]) => {
     const st = ENEMY_TYPES[type];
-    return { type, ...st, hp, maxHp:st.hp, x, y, band, target:null, retargetIn:0 };
+    return { type, ...st, hp, maxHp:st.hp, speed: st.speed*ENEMY_SPD, x, y, band, target:null, retargetIn:0 };
   });
   S.bands = new Map(sv.bands.map(([id,mode,warned]) =>
     [id, { mode, nextEval:0, dest:null, officer:null, warnedRaid:!!warned }]));
@@ -707,12 +895,12 @@ function resumeGame(sv) {
   S.connDirty = true; S.lastFix = null;
   S.fieldClear = !S.enemies.length && !S.pendingSpawns.length;
   S.phase = 'playing';
+  logEvent('▶️ Game resumed');
   requestWake();
   if (S.mode==='gps' && navigator.geolocation)
     S.gpsWatch = navigator.geolocation.watchPosition(onFix, err => toast('GPS error: '+err.message,'bad'),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
   banner('▶️ Resumed', 2000);
-  toast(S.mode==='gps' ? 'Welcome back, General — walk on and your position will sync' : 'Welcome back, General', 'good');
   lastT = null;
   requestAnimationFrame(frame);
 }
@@ -724,7 +912,11 @@ addEventListener('pagehide', saveGame);
 
 /* =================== GAME START / END =================== */
 function startGame(mode, origin) {
+  applyConfig(CFG);
   S.mode = mode; S.origin = origin;
+  S.supply = CFG.startSupply;
+  S.playerHp = PLAYER_HP_MAX;
+  S.diffMult = CFG.waveSize;
   $('menu').style.display = 'none';
   ['hud','buildBar'].forEach(id => $(id).style.display = 'flex');
   $('sideBtns').style.display = 'flex';
@@ -732,15 +924,22 @@ function startGame(mode, origin) {
   initMap([origin.lat, origin.lng]);
   genWorld();
   scheduleWave();
+  if (CFG.startOfficer) {
+    S.officer = { x:8, y:8, hp:OFFICER_HP, mode:'idle', target:null, order:null };
+  }
   S.phase = 'playing';
   S.startedAt = performance.now();
+  const diffName = document.querySelector('#diffRow .pill.sel')?.textContent || 'custom';
+  logEvent('🏰 Game started — '+(mode==='gps'?'GPS':'Simulator')+', '+S.wavesToWin+' waves, '+diffName+
+           (JSON.stringify(CFG)!==JSON.stringify({...DEFAULTS, ...DIFF_PRESETS[document.querySelector('#diffRow .pill.sel')?.dataset.diff||'soldier']}) ? ' (custom settings)' : ''));
   requestWake();
   banner('🏰 Defend the Keep', 2200);
-  toast('First wave in ~100s — go capture 🌾 grain fields!', 'good');
+  toast('First wave in ~'+Math.round(S.nextWaveAt)+'s — go capture 🌾 grain fields!', 'good');
   requestAnimationFrame(frame);
 }
 function endGame(won) {
   S.phase = won ? 'won' : 'over';
+  logEvent(won ? '🏆 VICTORY — all waves survived, field swept' : '💀 The Keep has fallen');
   $('endTitle').textContent = won ? '🏆 Victory!' : '💀 The Keep has fallen';
   $('endSub').textContent = won ? 'You survived all '+S.wavesToWin+' waves and swept the field.' :
     'You fell during wave '+S.wavesLaunched+'.';
@@ -750,6 +949,8 @@ function endGame(won) {
     '<div>Time</div><b>'+mins.toFixed(1)+' min</b>' +
     '<div>Enemies defeated</div><b>'+S.kills+'</b>' +
     '<div>Avg pace</div><b>'+(S.dist>100 ? (mins/(S.dist/1000)).toFixed(1)+' min/km' : '–')+'</b>';
+  $('endLog').innerHTML = '<b style="font-size:13px">📜 Battle log</b><br>' +
+    S.log.map(([t,m]) => '<div><span class="lt">'+fmtT(t)+'</span>'+m+'</div>').join('');
   $('btnEndless').style.display = won ? 'block' : 'none';
   $('endScreen').style.display = 'flex';
   clearSave();
@@ -761,6 +962,7 @@ $('btnEndless').onclick = () => {
   S.phase = 'playing';
   S.nextWaveAt = S.t + 45;
   scheduleWave();
+  logEvent('♾️ Endless mode begins');
   banner('♾️ Endless mode — how far can you go?', 3000);
   lastT = null;
   requestAnimationFrame(frame);
@@ -786,6 +988,11 @@ function moveEnemy(e, tx, ty, dt) {
   e.x = nx; e.y = ny;
   if (nc && nc.owner===1 && !(nc.fort && nc.wallHp>0)) razeCell(nc, dt);
 }
+function moveToward(u, tx, ty, spd, dt) {
+  const d = Math.hypot(tx-u.x, ty-u.y) || 1;
+  const step = Math.min(spd*dt, d);
+  u.x += (tx-u.x)/d * step; u.y += (ty-u.y)/d * step;
+}
 function update(dt) {
   S.t += dt;
 
@@ -804,19 +1011,26 @@ function update(dt) {
   const pr = Math.hypot(S.player.x, S.player.y);
   if (pr > ARENA_R) { S.player.x *= ARENA_R/pr; S.player.y *= ARENA_R/pr; }
 
-  /* --- territory capture (not while routed) --- */
+  /* --- territory capture by YOU (not while routed) --- */
   if (!S.routed) {
     for (const c of S.cells.values()) {
       if (c.owner===1) continue;
       if (Math.hypot(c.cx-S.player.x, c.cy-S.player.y) > CAPTURE_RADIUS + CELL*0.5) continue;
       if (neighbors8(c).some(n=>n.owner===1)) {
-        c.owner=1; c.integrity=100; S.connDirty=true;
-        if (c.feature==='grain') toast('🌾 Grain field captured!', 'good');
-        if (c.feature==='iron') toast('⛰️ Iron deposit captured — build a ⛏️ Mine here', 'good');
-        if (c.feature==='stone') toast('🪨 Stone outcrop captured — build a ⚒️ Quarry here', 'good');
-        if (c.feature==='spring') toast('⛲ Healing spring captured — troops nearby recover fast', 'good');
+        c.owner=1; c.integrity=100; S.connDirty=true; S.encloseDirty=true;
+        if (c.feature==='grain') { toast('🌾 Grain field captured!', 'good'); logEvent('🌾 Grain field captured'); }
+        if (c.feature==='iron') { toast('⛰️ Iron deposit captured — build a ⛏️ Mine here', 'good'); logEvent('⛰️ Iron deposit captured'); }
+        if (c.feature==='stone') { toast('🪨 Stone outcrop captured — build a ⚒️ Quarry here', 'good'); logEvent('🪨 Stone outcrop captured'); }
+        if (c.feature==='spring') { toast('⛲ Healing spring captured — troops nearby recover fast', 'good'); logEvent('⛲ Healing spring captured'); }
       }
     }
+  }
+
+  /* --- encirclement check (throttled) --- */
+  S.encloseTimer -= dt;
+  if (S.encloseDirty && S.encloseTimer <= 0) {
+    S.encloseDirty = false; S.encloseTimer = 1;
+    processEnclosure();
   }
 
   /* --- connectivity + economy --- */
@@ -824,9 +1038,9 @@ function update(dt) {
   if (S.connDirty && S.connTimer<=0) { recomputeConnectivity(); S.connTimer=0.5; }
   for (const c of S.cells.values()) {
     if (c.owner!==1 || !c.connected) continue;
-    if (c.feature==='grain') S.supply += RATES.grain*dt;
-    if (c.structure==='mine') S.iron += RATES.mine*dt;
-    if (c.structure==='quarry') S.stone += RATES.quarry*dt;
+    if (c.feature==='grain') S.supply += RATES.grain/PLENTY*dt;
+    if (c.structure==='mine') S.iron += RATES.mine/PLENTY*dt;
+    if (c.structure==='quarry') S.stone += RATES.quarry/PLENTY*dt;
   }
   const springs = ownedConn(c=>c.feature==='spring');
   const nearSpring = p => springs.some(sp => Math.hypot(sp.cx-p.x, sp.cy-p.y) < SPRING_R);
@@ -849,16 +1063,50 @@ function update(dt) {
   for (let i=S.pendingSpawns.length-1; i>=0; i--)
     if (S.t >= S.pendingSpawns[i].at) { spawnEnemy(S.pendingSpawns[i]); S.pendingSpawns.splice(i,1); }
 
-  /* --- band AI --- */
   bandAI();
 
-  /* --- defender AI: marches, skirmishing, return to post --- */
+  /* --- your officer --- */
+  if (S.officer) {
+    const o = S.officer;
+    if (o.mode==='riding' && o.target) {
+      moveToward(o, o.target.x, o.target.y, OFF_SPEED, dt);
+      unitCapture(o);
+      if (dist(o, o.target) < 4) {
+        if (o.order) {
+          const rallied = S.defenders.filter(d => dist(d, o.target) <= RALLY_R);
+          if (rallied.length) {
+            rallied.forEach((d, i) => {
+              const a = (i / rallied.length) * Math.PI*2;
+              d.anchor = { x: o.target.x + Math.cos(a)*15, y: o.target.y + Math.sin(a)*15 };
+              d.moveTarget = { ...d.anchor };
+              d.stance = o.order;
+            });
+            toast('📣 Officer rallied '+rallied.length+' troops ('+(o.order==='hold'?'hold ground':'engage at will')+')', 'good');
+            logEvent('📣 Officer rallied '+rallied.length+' troops');
+          } else toast('📣 The officer found no troops near his flag', 'bad');
+        }
+        o.mode = 'returning'; o.target = null; o.order = null;
+      }
+    } else if (o.mode==='returning') {
+      moveToward(o, S.player.x, S.player.y, OFF_SPEED, dt);
+      unitCapture(o);
+      if (dist(o, S.player) < 12) o.mode = 'idle';
+    } else {                                            // idle: ride at your side
+      if (dist(o, S.player) > 18) { moveToward(o, S.player.x, S.player.y, OFF_SPEED, dt); unitCapture(o); }
+    }
+    const calmO = !S.enemies.some(e => dist2(e,o) < 60*60);
+    if (calmO && o.hp < OFFICER_HP)
+      o.hp = Math.min(OFFICER_HP, o.hp + ((Math.hypot(o.x,o.y)<50 || nearSpring(o)) ? 12 : 4)*dt);
+  }
+
+  /* --- defender AI: marches (capturing as they go), skirmishing, return to post --- */
   for (const d of S.defenders) {
     if (d.moveTarget) {
       const dd = dist(d, d.moveTarget);
       if (dd < 2) { d.moveTarget = null; continue; }
       d.x += (d.moveTarget.x-d.x)/dd * DEF_MOVE_SPEED * dt;
       d.y += (d.moveTarget.y-d.y)/dd * DEF_MOVE_SPEED * dt;
+      unitCapture(d);
       continue;
     }
     if (d.stance !== 'skirmish') continue;
@@ -874,7 +1122,8 @@ function update(dt) {
     } else if (!tgt) {
       const da = dist(d, d.anchor);
       if (da > 3) { d.x += (d.anchor.x-d.x)/da * DEF_MOVE_SPEED * dt;
-                    d.y += (d.anchor.y-d.y)/da * DEF_MOVE_SPEED * dt; }
+                    d.y += (d.anchor.y-d.y)/da * DEF_MOVE_SPEED * dt;
+                    unitCapture(d); }
     }
   }
 
@@ -884,7 +1133,6 @@ function update(dt) {
     const band = e.band ? S.bands.get(e.band) : null;
     const mode = band ? band.mode : 'feral';
 
-    /* raiders keep their own economic targeting */
     if (e.type==='raider' && (e.retargetIn -= dt) <= 0) {
       e.retargetIn = 3;
       let best=null, bd=1e12;
@@ -897,7 +1145,6 @@ function update(dt) {
       e.target = best ? {x:best.cx,y:best.cy} : null;
     }
 
-    /* 1. an engaging defender: charge it / fight it */
     let foe=null, fd=1e12;
     for (const d of S.defenders) { const dd=dist2(e,d); if (dd<fd){fd=dd;foe=d;} }
     const engageR = mode==='raid' ? 20 : 32;
@@ -906,16 +1153,17 @@ function update(dt) {
       else foe.hp -= e.dps*dt;
       continue;
     }
-
-    /* 2. the player */
+    /* your officer is a target of opportunity */
+    if (S.officer && dist2(e, S.officer) < ENEMY_MELEE*ENEMY_MELEE) {
+      S.officer.hp -= e.dps * 0.6 * dt;
+      continue;
+    }
     const dp = dist(e, S.player);
     if (!S.routed && dp < BG_RANGE && mode!=='raid') { S.playerHp -= e.dps*0.4*dt; continue; }
-    if (mode==='raid' && !S.routed && dp < 55) {                 // bandits refuse the fight
+    if (mode==='raid' && !S.routed && dp < 55) {
       moveEnemy(e, e.x + (e.x-S.player.x)/(dp||1)*60, e.y + (e.y-S.player.y)/(dp||1)*60, dt);
       continue;
     }
-
-    /* 3. macro destination */
     let dest = null;
     if (e.type==='raider') {
       dest = e.target || keepPos;
@@ -924,22 +1172,20 @@ function update(dt) {
       if (foe) { const dd=Math.sqrt(fd); if (dd<bestD){ bestD=dd; dest={x:foe.x,y:foe.y}; } }
       if (!S.routed && dp < bestD) dest = {x:S.player.x, y:S.player.y};
     } else if (mode==='muster') {
-      dest = null;                                               // gathering at the spawn point
+      dest = null;
     } else {
       const off = band ? band.officer : null;
       if (off && off.hp>0 && !e.officer && dist(e,off) > 55) dest = {x:off.x, y:off.y};
       else if (mode==='raid') dest = band.dest;
       else dest = keepPos;
     }
-    if (!dest) {                                                 // holding: raze what you stand on
+    if (!dest) {
       const ch = cellAt(e.x, e.y);
       if (ch && ch.owner===1 && !(ch.fort && ch.wallHp>0)) razeCell(ch, dt);
       continue;
     }
-
-    /* 4. arrive / march */
     if (dist(e, dest) < 14) {
-      if (Math.hypot(dest.x, dest.y) < 1) S.keepHp -= e.dps*dt;  // battering the keep
+      if (Math.hypot(dest.x, dest.y) < 1) S.keepHp -= e.dps*dt;
       else {
         const ch = cellAt(e.x, e.y);
         if (ch && ch.owner===1 && !(ch.fort && ch.wallHp>0)) razeCell(ch, dt);
@@ -950,11 +1196,18 @@ function update(dt) {
     moveEnemy(e, dest.x, dest.y, dt);
   }
   if (S.keepHp <= 0) { endGame(false); return; }
+  /* keep damage milestones for the log */
+  const kp = 100*S.keepHp/KEEP_HP_MAX;
+  for (const mile of [75, 50, 25]) {
+    if (kp < mile && S.keepMile > mile) { logEvent('🏰 Keep at '+mile+'% health!'); }
+  }
+  S.keepMile = Math.min(S.keepMile, kp);
 
   /* --- player rout & recovery --- */
   if (!S.routed && S.playerHp <= 0) {
     S.playerHp = 0; S.routed = true;
     banner('🩸 Your bodyguard is scattered!', 3000);
+    logEvent('🩸 You were routed');
     toast('Retreat! No aura or capturing until you recover (fastest at the Keep or a spring)', 'bad');
   }
   const calmPlayer = !S.enemies.some(e => dist2(e,S.player) < 60*60);
@@ -965,13 +1218,14 @@ function update(dt) {
   if (S.routed && S.playerHp >= PLAYER_HP_MAX*0.6) {
     S.routed = false;
     banner('🛡️ Bodyguard reformed!', 2500);
+    logEvent('🛡️ Bodyguard reformed');
   }
 
   /* --- damage: bodyguard (focused) + defenders; healing --- */
   if (!S.routed) {
     const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE)
       .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, BG_TARGETS);
-    for (const e of engaged) e.hp -= BG_DPS*dt;
+    for (const e of engaged) e.hp -= BG_DPS*BG_MULT*dt;
   }
   for (const d of S.defenders) {
     let tgt=null, td=1e12;
@@ -992,12 +1246,18 @@ function update(dt) {
   for (let i=S.enemies.length-1;i>=0;i--) if (S.enemies[i].hp<=0) {
     const dead = S.enemies[i];
     S.supply += dead.bounty; S.kills++;
-    if (dead.officer) toast('⚑ Officer down! (+'+dead.bounty+' 🌾)', 'good');
+    if (dead.officer) { toast('⚑ Officer down! (+'+dead.bounty+' 🌾)', 'good'); logEvent('⚑ Enemy officer slain'); }
     S.enemies.splice(i,1);
   }
   for (let i=S.defenders.length-1;i>=0;i--) if (S.defenders[i].hp<=0) {
     if (S.selDef===S.defenders[i]) S.selDef=null;
+    logEvent('💀 '+(S.defenders[i].kind==='vet'?'Veteran':'Defender')+' lost ('+(S.defenders.length-1)+' remain)');
     S.defenders.splice(i,1);
+  }
+  if (S.officer && S.officer.hp <= 0) {
+    S.officer = null;
+    toast('💀 Your officer has fallen!', 'bad');
+    logEvent('💀 Your officer was killed');
   }
 
   /* --- field-clear + victory --- */
@@ -1006,10 +1266,10 @@ function update(dt) {
     if (!S.fieldClear && S.wavesLaunched > 0) {
       S.fieldClear = true;
       banner('✅ Field clear!', 2000);
+      logEvent('✅ Field cleared');
     }
   }
 
-  /* autosave every ~5s of play */
   S.saveTimer = (S.saveTimer || 0) - dt;
   if (S.saveTimer <= 0) { S.saveTimer = 5; saveGame(); }
 
@@ -1018,7 +1278,8 @@ function update(dt) {
 }
 function hitWall(c, e, dt) {
   c.wallHp -= e.dps * (e.type==='brute' ? 2 : 1) * dt;
-  if (c.wallHp <= 0) { c.wallHp = 0; c.fort = false; toast('💥 A wall has been breached!', 'bad'); }
+  if (c.wallHp <= 0) { c.wallHp = 0; c.fort = false;
+    toast('💥 A wall has been breached!', 'bad'); logEvent('💥 Wall breached'); }
 }
 function razeCell(c, dt) {
   c.integrity -= 25*dt;
@@ -1026,6 +1287,7 @@ function razeCell(c, dt) {
     c.owner = 0; c.integrity = 100; c.fort = false; c.wallHp = 0; S.connDirty = true;
     if (c.structure && c.structure!=='keep') {
       toast('💥 Your ' + c.structure + ' was destroyed!', 'bad');
+      logEvent('💥 '+c.structure+' destroyed by raiders');
       c.structure = null;
     }
   }
@@ -1039,15 +1301,15 @@ function updateHUD() {
   $('sHp').textContent = Math.max(0,Math.ceil(S.playerHp));
   $('hpChip').classList.toggle('hurt', S.routed || S.playerHp < PLAYER_HP_MAX*0.4);
   $('sSupply').textContent = Math.floor(S.supply);
-  $('rSupply').textContent = nGrain ? '+'+(nGrain*RATES.grain).toFixed(1)+'/s' : '';
+  $('rSupply').textContent = nGrain ? '+'+(nGrain*RATES.grain/PLENTY).toFixed(1)+'/s' : '';
   $('sIron').textContent = Math.floor(S.iron);
-  $('rIron').textContent = nMine ? '+'+(nMine*RATES.mine).toFixed(1)+'/s' : '';
+  $('rIron').textContent = nMine ? '+'+(nMine*RATES.mine/PLENTY).toFixed(1)+'/s' : '';
   $('sStone').textContent = Math.floor(S.stone);
-  $('rStone').textContent = nQuarry ? '+'+(nQuarry*RATES.quarry).toFixed(1)+'/s' : '';
+  $('rStone').textContent = nQuarry ? '+'+(nQuarry*RATES.quarry/PLENTY).toFixed(1)+'/s' : '';
   $('sKeep').textContent = Math.max(0,Math.ceil(S.keepHp));
   const nxt = isFinite(S.nextWaveAt) ? Math.max(0,Math.ceil(S.nextWaveAt-S.t))+'s' : '—';
   $('sWave').textContent = S.wavesLaunched + (S.endless ? '' : '/'+S.wavesToWin) + ' · next ' + nxt;
-  $('sArmy').textContent = S.defenders.length;
+  $('sArmy').textContent = S.defenders.length + (S.officer ? ' +🐎' : '');
   $('sDist').textContent = (S.dist/1000).toFixed(2)+' km';
   $('cDef').textContent = defCost()+' 🌾';
   $('cVet').textContent = defCost()+' 🌾 + 10 ⚙️';
@@ -1055,6 +1317,7 @@ function updateHUD() {
   const pc = playerCell();
   $('bDef').classList.toggle('off', S.supply < defCost());
   $('bVet').classList.toggle('off', S.supply < defCost() || S.iron < 10 || !smithy);
+  $('bOff').classList.toggle('off', !!S.officer || S.supply < OFFICER_COST);
   $('bMine').classList.toggle('off', !canAfford(COSTS.mine) || !(pc && pc.feature==='iron' && pc.owner===1));
   $('bQuarry').classList.toggle('off', !canAfford(COSTS.quarry) || !(pc && pc.feature==='stone' && pc.owner===1));
   $('bSmith').classList.toggle('off', !canAfford(COSTS.smith));
@@ -1070,7 +1333,7 @@ function draw() {
   if (!map || !S.origin) return;
   const p0 = pt(0,0), p100 = pt(100,0);
   const pxPerM = Math.abs(p100.x - p0.x) / 100;
-  PROJ.x0 = p0.x; PROJ.y0 = p0.y; PROJ.s = pxPerM;   // one real projection per frame; the rest is arithmetic
+  PROJ.x0 = p0.x; PROJ.y0 = p0.y; PROJ.s = pxPerM;
   const cellPx = CELL * pxPerM;
   const onScreen = p => p.x>-40 && p.y>-40 && p.x<innerWidth+40 && p.y<innerHeight+40;
 
@@ -1119,6 +1382,13 @@ function draw() {
       ctx.beginPath(); ctx.arc(q.x, q.y, 6, 0, Math.PI*2);
       ctx.fillStyle = '#fb923c'; ctx.fill();
     }
+  }
+  if (S.offCmd && S.offCmd.dest) {
+    const q = px(S.offCmd.dest.x, S.offCmd.dest.y);
+    ctx.font = '20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🚩', q.x, q.y);
+    ctx.beginPath(); ctx.arc(q.x, q.y, RALLY_R*pxPerM, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(251,146,60,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,7]); ctx.stroke(); ctx.setLineDash([]);
   }
 
   const iconPx = Math.max(15, cellPx*0.62);
@@ -1176,6 +1446,23 @@ function draw() {
     bar(p.x, p.y-12, 22, d.hp/d.maxHp, '#4ade80');
   }
 
+  /* your officer */
+  if (S.officer) {
+    const o = S.officer, p = px(o.x, o.y);
+    if (o.mode==='riding' && o.target) {
+      const tp = px(o.target.x, o.target.y);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tp.x,tp.y);
+      ctx.strokeStyle='rgba(251,191,36,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font='18px sans-serif'; ctx.fillText('🚩', tp.x, tp.y);
+    }
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(8, 8*pxPerM), 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+    ctx.strokeStyle = '#b45309'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = Math.max(12, 11*pxPerM)+'px sans-serif';
+    ctx.fillText('🐎', p.x, p.y);
+    if (o.hp < OFFICER_HP) bar(p.x, p.y-14, 24, o.hp/OFFICER_HP, '#fbbf24');
+  }
+
   for (const e of S.enemies) {
     const p = px(e.x, e.y);
     ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3, e.r*pxPerM), 0, Math.PI*2);
@@ -1186,7 +1473,7 @@ function draw() {
       ctx.font = 'bold 13px sans-serif';
       ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
       ctx.strokeText('⚑', p.x, p.y-20);
-      ctx.fillStyle = bm==='raid' ? '#111827' : bm==='muster' ? '#b45309' : '#dc2626';  // black=bandit, amber=mustering, red=attacking
+      ctx.fillStyle = bm==='raid' ? '#111827' : bm==='muster' ? '#b45309' : '#dc2626';
       ctx.fillText('⚑', p.x, p.y-20);
     }
     bar(p.x, p.y-12, 20, e.hp/e.maxHp, '#f87171');
@@ -1239,17 +1526,52 @@ function bar(x, y, w, frac, color) {
   ctx.fillStyle=color; ctx.fillRect(x-w/2, y-2.5, w*clamp(frac,0,1), 5);
 }
 
-/* =================== MENU / CONTROLS =================== */
-for (const row of ['lenRow','diffRow']) {
-  $(row).addEventListener('click', e => {
-    const b = e.target.closest('.pill'); if (!b) return;
-    for (const p of $(row).querySelectorAll('.pill')) p.classList.remove('sel');
-    b.classList.add('sel');
-  });
+/* =================== MENU / SETTINGS / CONTROLS =================== */
+function buildSettingsUI() {
+  const rows = $('setRows');
+  rows.innerHTML = '';
+  for (const [k, label, min, max, step] of SETTING_DEFS) {
+    const row = document.createElement('div');
+    row.className = 'setrow';
+    row.innerHTML = '<span>'+label+'</span>' +
+      '<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+CFG[k]+'" data-cfg="'+k+'">' +
+      '<span class="val" id="val_'+k+'">'+CFG[k]+'</span>';
+    rows.appendChild(row);
+  }
+  rows.oninput = e => {
+    const k = e.target.dataset.cfg; if (!k) return;
+    CFG[k] = +e.target.value;
+    $('val_'+k).textContent = CFG[k];
+    storeConfig();
+  };
 }
+function refreshSettingsUI() {
+  for (const [k] of SETTING_DEFS) {
+    const inp = document.querySelector('input[data-cfg="'+k+'"]');
+    if (inp) { inp.value = CFG[k]; $('val_'+k).textContent = CFG[k]; }
+  }
+}
+buildSettingsUI();
+$('btnResetCfg').onclick = () => {
+  const diff = document.querySelector('#diffRow .pill.sel')?.dataset.diff || 'soldier';
+  CFG = { ...DEFAULTS, ...DIFF_PRESETS[diff] };
+  storeConfig(); refreshSettingsUI();
+  toast('Settings reset to '+diff+' defaults');
+};
+$('lenRow').addEventListener('click', e => {
+  const b = e.target.closest('.pill'); if (!b) return;
+  for (const p of $('lenRow').querySelectorAll('.pill')) p.classList.remove('sel');
+  b.classList.add('sel');
+});
+$('diffRow').addEventListener('click', e => {
+  const b = e.target.closest('.pill'); if (!b) return;
+  for (const p of $('diffRow').querySelectorAll('.pill')) p.classList.remove('sel');
+  b.classList.add('sel');
+  CFG = { ...CFG, ...DIFF_PRESETS[b.dataset.diff] };   // preset writes the settings; user can fine-tune after
+  storeConfig(); refreshSettingsUI();
+});
 function readMenuChoices() {
   S.wavesToWin = +document.querySelector('#lenRow .pill.sel').dataset.waves;
-  S.diffMult = +document.querySelector('#diffRow .pill.sel').dataset.mult;
 }
 $('btnSim').onclick = () => {
   readMenuChoices();
@@ -1273,8 +1595,6 @@ $('btnPause').onclick = () => {
   if (S.phase==='playing') { S.phase='paused'; $('btnPause').textContent='▶️'; banner('⏸️ Paused', 60000); saveGame(); }
   else if (S.phase==='paused') { S.phase='playing'; $('btnPause').textContent='⏸️'; $('waveBanner').style.opacity=0; }
 };
-
-/* offer to resume an interrupted run */
 (function offerResume(){
   const sv = loadSave();
   if (!sv) return;
