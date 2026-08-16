@@ -110,7 +110,8 @@
 
 <div id="buildBar">
   <button class="bbtn" id="bDef"><span class="ico">🛡️</span>Defender<span class="cost" id="cDef">30 🌾</span></button>
-  <button class="bbtn" id="bVet"><span class="ico">⚔️</span>Veteran<span class="cost" id="cVet">30 🌾 + 10 ⚙️</span></button>
+  <button class="bbtn" id="bVet"><span class="ico">⚔️</span>Swordsman<span class="cost" id="cVet">30 🌾 + 10 ⚙️</span></button>
+  <button class="bbtn" id="bKnight"><span class="ico">🐴</span>Knight<span class="cost" id="cKnight">40 🌾 + 15 ⚙️</span></button>
   <button class="bbtn" id="bOff"><span class="ico">🐎</span>Officer<span class="cost">80 🌾</span></button>
   <button class="bbtn" id="bMine"><span class="ico">⛏️</span>Mine<span class="cost">40 🌾</span></button>
   <button class="bbtn" id="bQuarry"><span class="ico">⚒️</span>Quarry<span class="cost">40 🌾</span></button>
@@ -122,6 +123,7 @@
 <div id="stanceBar">
   <button class="stbtn" id="stHold">🛑 Hold ground</button>
   <button class="stbtn" id="stSkirm">⚔️ Engage at will</button>
+  <button class="stbtn" id="stFollow">🐴 Follow me</button>
 </div>
 <div id="offBar">
   <button class="stbtn" id="obEngage">📣 Rally troops there → engage</button>
@@ -140,7 +142,7 @@
 
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.5</div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.6</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Session length</span></div>
@@ -154,6 +156,11 @@
     <button class="pill" data-diff="recruit">Recruit</button>
     <button class="pill sel" data-diff="soldier">Soldier</button>
     <button class="pill" data-diff="veteran">Veteran</button>
+  </div>
+  <div class="selrow"><span class="lbl">Pace — the world slows to match your legs (walking makes sessions ~1.8× longer)</span></div>
+  <div class="selrow" id="paceRow">
+    <button class="pill sel" data-pace="1">🏃 Running</button>
+    <button class="pill" data-pace="0.55">🚶 Walking</button>
   </div>
 
   <details id="advBox">
@@ -171,7 +178,7 @@
     <b>How to play:</b> Walk/run through cells next to your territory to capture them — and so do your troops:
     <b>any defender or officer you send marching claims the ground it crosses</b>. Fully <b>encircle</b> an area
     and everything inside flips to you at once. Resources only produce while connected to your Keep by an unbroken
-    green path: 🌾 grain → supply, ⛰️ iron (⛏️ Mine) → veterans, 🪨 stone (⚒️ Quarry) → walls, ⛲ springs heal nearby
+    green path: 🌾 grain → supply, ⛰️ iron (⛏️ Mine) → swordsmen & knights, 🪨 stone (⚒️ Quarry) → walls, ⛲ springs heal nearby
     troops and walls. Stand by your damaged Keep to repair it with supply.<br><br>
     <b>🐎 Your officer</b> rides ~3× faster than troops march. Tap the 🐎 button, tap a destination, then choose:
     <b>rally the troops there</b> (he takes command of every defender within 100 m of that spot — engage or hold)
@@ -188,7 +195,17 @@
     <b>🚩 Commands:</b> tap 🚩 to order every defender within 60 m into a line (tap two points), then pick
     <b>Hold ground</b> or <b>Engage at will</b>. Or tap one defender, then its destination — send it marching
     through neutral ground to paint territory.<br><br>
-    <b>💪 Brutes</b> shrug off basic defenders and smash walls — use ⚔️ veterans. <b>🐺 Wolves</b> are fast.
+    <b>🧱 Wall garrisons:</b> defenders never cross your walls on their own — they press up behind them, follow
+    attackers along the wall from the safe side, and shoot over the parapet with extended range. Enemies must
+    break the wall to reach them.<br><br>
+    <b>🎖️ Leadership:</b> troops fighting within 40 m of you strike 25% harder, and visiting your troops
+    between fights grants a 1-minute healing morale boost. Wounded troops below 30% HP <b>retreat on their own</b>
+    (🏳️) to the nearest spring or the Keep, heal up, and march back to their post.<br><br>
+    <b>🐴 Knights</b> (Smithy + iron) are your quick-response force — faster than a running general. They default
+    to following you; order them anywhere with a tap or the 🚩 line command, and set any unit to "Follow me".<br><br>
+    <b>🚶 Walking pace:</b> choose Walking on the menu and the whole world slows to match your legs — same
+    strategy, same challenge, no jogging required.<br><br>
+    <b>💪 Brutes</b> shrug off basic defenders and smash walls — use ⚔️ swordsmen. <b>🐺 Wolves</b> are fast.
     <b>🏴 Raiders</b> hunt your economy. 🗼 Watchtowers give early, precise warning. 📜 A full battle log awaits
     you at the end of each game.
   </div>
@@ -221,6 +238,7 @@ const DEFAULTS = {
   defBase: 30,       // defender base cost
   arenaR: 600,       // battlefield radius (m)
   startOfficer: 1,   // 1 = begin with an officer
+  pace: 1.0,         // world speed: 1.0 for running, ~0.55 for walking (real-world speed ratios preserved)
 };
 const DIFF_PRESETS = {
   recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1 },
@@ -242,6 +260,7 @@ const SETTING_DEFS = [
   ['defBase',     'Defender base cost (🌾)',      15, 60, 5],
   ['arenaR',      'Battlefield radius (m)',       400, 800, 50],
   ['startOfficer','Start with an officer (0/1)',  0, 1, 1],
+  ['pace',        'World speed × (🚶 walk ≈ 0.55)', 0.4, 1.2, 0.05],
 ];
 let CFG = (() => { try { const c = JSON.parse(localStorage.getItem('fdConfig2'));
                         if (c) return { ...DEFAULTS, ...c }; } catch(e){} return { ...DEFAULTS }; })();
@@ -250,12 +269,12 @@ function storeConfig(){ try { localStorage.setItem('fdConfig2', JSON.stringify(C
 /* live-tunable parameters (set from CFG at game start / resume) */
 let ARENA_R = 600, WAVE_PERIOD = 110, DEF_MOVE_SPEED = 1.2, WALL_HP = 350,
     DEF_BASE = 30, PLAYER_HP_MAX = 250, CAPTURE_RADIUS = 20,
-    ENEMY_SPD = 1, BG_MULT = 1, PLENTY = 2, OFF_SPEED = 3.5;
+    ENEMY_SPD = 1, BG_MULT = 1, PLENTY = 2, OFF_SPEED = 3.5, PACE = 1;
 function applyConfig(c) {
   ARENA_R = c.arenaR; WAVE_PERIOD = c.wavePeriod; DEF_MOVE_SPEED = c.defSpeed;
   WALL_HP = c.wallHp; DEF_BASE = c.defBase; PLAYER_HP_MAX = c.playerHp;
   CAPTURE_RADIUS = c.captureR; ENEMY_SPD = c.enemySpeed; BG_MULT = c.bgPower;
-  PLENTY = c.plenty; OFF_SPEED = c.offSpeed;
+  PLENTY = c.plenty; OFF_SPEED = c.offSpeed; PACE = c.pace || 1;
 }
 
 /* =================== FIXED CONSTANTS =================== */
@@ -277,10 +296,13 @@ const ENEMY_TYPES = {
   raider:  { hp:60,  speed:2.5, dps:12, armored:false, r:5, color:'#a855f7', bounty:2, power:1   },
   officer: { hp:100, speed:1.9, dps:10, armored:false, r:6, color:'#991b1b', bounty:4, power:1.6, officer:true },
 };
-const DEF_STATS = {
-  def: { hp:100, dps:10, range:22, armorMult:0.15, color:'#3b82f6', power:1.2 },
-  vet: { hp:220, dps:32, range:25, armorMult:1.0,  color:'#facc15', power:2.6 },
+const DEF_STATS = {   // troops at 1.5× strength — defenses are meant to mostly hold
+  def:    { hp:150, dps:15, range:22, armorMult:0.15, color:'#3b82f6', power:1.8 },
+  vet:    { hp:330, dps:48, range:25, armorMult:1.0,  color:'#facc15', power:3.9 },  // "Swordsman" in UI
+  knight: { hp:200, dps:24, range:16, armorMult:0.5,  color:'#8b5cf6', power:2.4, speed:4.5 },
 };
+const RETREAT_AT = 0.30, RETURN_AT = 0.70;   // morale-break thresholds
+const MORALE_R = 40, MORALE_SECS = 60;       // the General's presence: healing morale + combat inspiration
 const PLAYER_POWER = 5;
 const ASSAULT_RATIO = 1.5;
 const FEATURE_ICONS = { grain:'🌾', iron:'⛰️', stone:'🪨', spring:'⛲' };
@@ -600,18 +622,24 @@ function requireOwnedConnected() {
   if (!c.connected) { toast('This area is cut off from the Keep — reconnect it first', 'bad'); return null; }
   return c;
 }
+const UNIT_NAMES = { def:'🛡️ Defender', vet:'⚔️ Swordsman', knight:'🐴 Knight' };
 function placeDefender(kind) {
-  const cost = kind==='vet' ? { s:defCost(), i:10 } : { s:defCost() };
+  const cost = kind==='vet' ? { s:defCost(), i:10 }
+             : kind==='knight' ? { s:defCost()+10, i:15 }
+             : { s:defCost() };
   if (!canAfford(cost)) return toast('Not enough resources', 'bad');
-  if (kind==='vet' && !ownedConn(c=>c.structure==='smith').length)
-    return toast('Veterans need a connected Smithy', 'bad');
+  if ((kind==='vet'||kind==='knight') && !ownedConn(c=>c.structure==='smith').length)
+    return toast((kind==='vet'?'Swordsmen':'Knights')+' need a connected Smithy', 'bad');
   const c = requireOwnedConnected(); if (!c) return;
   pay(cost);
   const st = DEF_STATS[kind];
   S.defenders.push({ kind, ...st, hp:st.hp, maxHp:st.hp, x:S.player.x, y:S.player.y,
-                     anchor:{x:S.player.x, y:S.player.y}, stance:'skirmish', moveTarget:null });
-  logEvent((kind==='vet'?'⚔️ Veteran':'🛡️ Defender')+' deployed ('+S.defenders.length+' fielded)');
-  toast((kind==='vet'?'⚔️ Veteran':'🛡️ Defender') + ' deployed (next costs '+defCost()+' 🌾)', 'good');
+                     anchor:{x:S.player.x, y:S.player.y},
+                     stance: kind==='knight' ? 'follow' : 'skirmish',   // knights default to escorting you
+                     moveTarget:null, retreating:false, moraleUntil:0 });
+  logEvent(UNIT_NAMES[kind]+' deployed ('+S.defenders.length+' fielded)');
+  toast(UNIT_NAMES[kind] + ' deployed' + (kind==='knight' ? ' — following you (🚩/tap to re-order)' :
+        ' (next costs '+defCost()+' 🌾)'), 'good');
 }
 function buyOfficer() {
   if (S.officer) return toast('You already have an officer', 'bad');
@@ -639,11 +667,12 @@ function build(type) {
   logEvent({mine:'⛏️ Mine built', quarry:'⚒️ Quarry built', smith:'🔥 Smithy built', tower:'🗼 Watchtower raised'}[type]);
   toast({mine:'⛏️ Mine built — iron will flow while connected',
          quarry:'⚒️ Quarry built — stone will flow while connected',
-         smith:'🔥 Smithy built — veterans unlocked',
+         smith:'🔥 Smithy built — swordsmen & knights unlocked',
          tower:'🗼 Watchtower raised — early warning on this flank'}[type], 'good');
 }
 $('bDef').onclick    = () => placeDefender('def');
 $('bVet').onclick    = () => placeDefender('vet');
+$('bKnight').onclick = () => placeDefender('knight');
 $('bOff').onclick    = buyOfficer;
 $('bMine').onclick   = () => build('mine');
 $('bQuarry').onclick = () => build('quarry');
@@ -660,12 +689,15 @@ function showStanceBar(units) {
   showStanceBar._t = setTimeout(()=>{ $('stanceBar').style.display='none'; }, 8000);
 }
 function setStance(stance) {
-  for (const d of S.lastOrdered) d.stance = stance;
+  for (const d of S.lastOrdered) { d.stance = stance; if (stance==='follow') d.moveTarget = null; }
   $('stanceBar').style.display = 'none';
-  toast(stance==='hold' ? '🛑 They will hold their ground' : '⚔️ They will engage enemies at will', 'good');
+  toast(stance==='hold' ? '🛑 They will hold their ground'
+      : stance==='follow' ? '🐴 They will follow you'
+      : '⚔️ They will engage enemies at will', 'good');
 }
-$('stHold').onclick  = () => setStance('hold');
-$('stSkirm').onclick = () => setStance('skirmish');
+$('stHold').onclick   = () => setStance('hold');
+$('stSkirm').onclick  = () => setStance('skirmish');
+$('stFollow').onclick = () => setStance('follow');
 $('btnLine').onclick = () => {
   if (S.phase !== 'playing') return;
   S.offCmd = null; $('offBar').style.display='none'; $('btnOff').classList.remove('armed');
@@ -835,7 +867,8 @@ function saveGame() {
       off: S.officer ? { x:Math.round(S.officer.x), y:Math.round(S.officer.y), hp:Math.round(S.officer.hp),
                          mode:S.officer.mode, target:S.officer.target, order:S.officer.order } : null,
       defs: S.defenders.map(d=>[d.kind, Math.round(d.x), Math.round(d.y), Math.round(d.hp),
-                                Math.round(d.anchor.x), Math.round(d.anchor.y), d.stance==='hold'?1:0]),
+                                Math.round(d.anchor.x), Math.round(d.anchor.y),
+                                d.stance==='hold'?1:d.stance==='follow'?2:0]),
       foes: S.enemies.map(e=>[e.type, Math.round(e.x), Math.round(e.y), Math.round(e.hp), e.band]),
       bands: [...S.bands.entries()].map(([id,b])=>[id, b.mode, b.warnedRaid?1:0]),
       groups: S.groups.map(g=>({a:g.angle, comp:g.comp, main:g.main?1:0})),
@@ -878,10 +911,11 @@ function resumeGame(sv) {
   S.log = sv.log || []; S.keepMile = sv.keepMile == null ? 100 : sv.keepMile;
   S.officer = sv.off ? { x:sv.off.x, y:sv.off.y, hp:sv.off.hp, mode:sv.off.mode,
                          target:sv.off.target, order:sv.off.order } : null;
-  S.defenders = sv.defs.map(([kind,x,y,hp,ax,ay,hold]) => {
-    const st = DEF_STATS[kind];
-    return { kind, ...st, hp, maxHp:st.hp, x, y, anchor:{x:ax,y:ay},
-             stance: hold?'hold':'skirmish', moveTarget:null };
+  S.defenders = sv.defs.map(([kind,x,y,hp,ax,ay,stanceIdx]) => {
+    const st = DEF_STATS[kind] || DEF_STATS.def;
+    return { kind, ...st, hp: Math.min(hp, st.hp), maxHp:st.hp, x, y, anchor:{x:ax,y:ay},
+             stance: stanceIdx===1?'hold':stanceIdx===2?'follow':'skirmish',
+             moveTarget:null, retreating:false, moraleUntil:0 };
   });
   S.enemies = sv.foes.map(([type,x,y,hp,band]) => {
     const st = ENEMY_TYPES[type];
@@ -934,7 +968,7 @@ function startGame(mode, origin) {
            (JSON.stringify(CFG)!==JSON.stringify({...DEFAULTS, ...DIFF_PRESETS[document.querySelector('#diffRow .pill.sel')?.dataset.diff||'soldier']}) ? ' (custom settings)' : ''));
   requestWake();
   banner('🏰 Defend the Keep', 2200);
-  toast('First wave in ~'+Math.round(S.nextWaveAt)+'s — go capture 🌾 grain fields!', 'good');
+  toast('First wave in ~'+Math.round(S.nextWaveAt/PACE)+'s — go capture 🌾 grain fields!', 'good');
   requestAnimationFrame(frame);
 }
 function endGame(won) {
@@ -975,7 +1009,7 @@ function frame(now) {
   if (lastT == null) lastT = now;
   const rawDt = Math.min((now-lastT)/1000, 0.1);
   lastT = now;
-  if (S.phase==='playing') update(rawDt * (S.mode==='sim' ? S.timeScale : 1));
+  if (S.phase==='playing') update(rawDt * (S.mode==='sim' ? S.timeScale : 1) * PACE);
   draw();
   requestAnimationFrame(frame);
 }
@@ -993,6 +1027,20 @@ function moveToward(u, tx, ty, spd, dt) {
   const step = Math.min(spd*dt, d);
   u.x += (tx-u.x)/d * step; u.y += (ty-u.y)/d * step;
 }
+/* wall-aware movement for garrison troops: never step INTO a friendly standing wall
+   (so they stay on their side of it), sliding along it to shadow attackers instead */
+const friendlyWallAt = (x,y) => { const c = cellAt(x,y);
+  return (c && c.fort && c.wallHp>0 && c.owner===1) ? c : null; };
+function stepBehindWalls(u, tx, ty, spd, dt) {
+  const d = Math.hypot(tx-u.x, ty-u.y) || 1;
+  const sx = (tx-u.x)/d * spd*dt, sy = (ty-u.y)/d * spd*dt;
+  if (!friendlyWallAt(u.x+sx, u.y+sy)) { u.x += sx; u.y += sy; return; }
+  if (!friendlyWallAt(u.x+sx, u.y)) { u.x += sx; return; }   // slide E/W along the wall
+  if (!friendlyWallAt(u.x, u.y+sy)) { u.y += sy; return; }   // slide N/S along the wall
+  /* pressed flat against the wall: back off a step and keep sliding to shadow the target */
+  if (Math.abs(sy) > 0.001 && !friendlyWallAt(u.x - sx, u.y + sy)) { u.x -= Math.sign(sx)*0.8; u.y += sy; return; }
+  if (Math.abs(sx) > 0.001 && !friendlyWallAt(u.x + sx, u.y - sy)) { u.y -= Math.sign(sy)*0.8; u.x += sx; return; }
+}
 function update(dt) {
   S.t += dt;
 
@@ -1003,9 +1051,10 @@ function update(dt) {
     if (keys.ArrowLeft||keys.a) dx=-1; if (keys.ArrowRight||keys.d) dx=1;
     const m = Math.hypot(dx,dy);
     if (m>0.01) {
-      const step = 5.0 * Math.min(m,1) * dt;
+      // joystick emulates real legs: run ≈ 5 m/s, walk ≈ 2 m/s of REAL time (world runs at PACE)
+      const step = ((PACE < 0.8 ? 2.0 : 5.0) / PACE) * Math.min(m,1) * dt;
       S.player.x += dx/m*step; S.player.y += -dy/m*step;
-      S.dist += step;
+      S.dist += step * PACE;
     }
   }
   const pr = Math.hypot(S.player.x, S.player.y);
@@ -1099,14 +1148,56 @@ function update(dt) {
       o.hp = Math.min(OFFICER_HP, o.hp + ((Math.hypot(o.x,o.y)<50 || nearSpring(o)) ? 12 : 4)*dt);
   }
 
-  /* --- defender AI: marches (capturing as they go), skirmishing, return to post --- */
+  /* --- defender AI: marches (capturing as they go), skirmishing, return to post ---
+     Skirmishers never cross friendly walls: they press up behind them, slide along them to
+     shadow attackers, and shoot over them with a parapet range bonus. Explicit move orders
+     (moveTarget) may cross walls. */
+  const wallCells = [];
+  for (const c of S.cells.values()) if (c.fort && c.wallHp>0 && c.owner===1) wallCells.push(c);
+  const nearWall = u => wallCells.some(w => (w.cx-u.x)**2 + (w.cy-u.y)**2 < 26*26);
+  const healPoints = springs.map(sp => ({x:sp.cx, y:sp.cy})).concat([{x:0, y:0}]);   // springs + the Keep
   for (const d of S.defenders) {
-    if (d.moveTarget) {
+    const spd = d.kind==='knight' ? DEF_STATS.knight.speed * (DEF_MOVE_SPEED/1.2) : DEF_MOVE_SPEED;
+    d.parapet = nearWall(d);
+    const effRange = d.range + (d.parapet ? 14 : 0);
+
+    /* the General's presence: healing morale (only granted when no enemies near) */
+    if (!S.routed && dist2(d, S.player) < MORALE_R*MORALE_R &&
+        !S.enemies.some(e => dist2(e, d) < 60*60))
+      d.moraleUntil = S.t + MORALE_SECS;
+
+    /* morale break: retreat to the nearest spring or the Keep to heal */
+    if (!d.retreating && d.hp < d.maxHp*RETREAT_AT) {
+      d.retreating = true; d.moveTarget = null;
+      logEvent('🏳️ '+(UNIT_NAMES[d.kind]||'Unit').replace(/^\S+ /,'')+' broke off to heal');
+    }
+    if (d.retreating && d.hp >= d.maxHp*RETURN_AT) {
+      d.retreating = false;
+      d.moveTarget = { ...d.anchor };                          // recovered: march back to post
+    }
+
+    if (d.moveTarget) {                                        // explicit orders come first
       const dd = dist(d, d.moveTarget);
       if (dd < 2) { d.moveTarget = null; continue; }
-      d.x += (d.moveTarget.x-d.x)/dd * DEF_MOVE_SPEED * dt;
-      d.y += (d.moveTarget.y-d.y)/dd * DEF_MOVE_SPEED * dt;
+      d.x += (d.moveTarget.x-d.x)/dd * spd * dt;
+      d.y += (d.moveTarget.y-d.y)/dd * spd * dt;
       unitCapture(d);
+      continue;
+    }
+    if (d.retreating) {                                        // run for the nearest healing point
+      let hp2=null, hd=1e12;
+      for (const h of healPoints) { const dd = dist2(d,h); if (dd<hd){hd=dd;hp2=h;} }
+      if (hd > 30*30) stepBehindWalls(d, hp2.x, hp2.y, spd, dt);
+      continue;
+    }
+    if (d.stance === 'follow') {                               // quick-response escort (knights' default)
+      const dp = dist(d, S.player);
+      let tgt=null, td=1e12;
+      for (const e of S.enemies) {
+        if (dist2(e, S.player) < 80*80) { const dd = dist2(d,e); if (dd<td){td=dd;tgt=e;} }
+      }
+      if (tgt && td > (effRange*0.8)*(effRange*0.8)) moveToward(d, tgt.x, tgt.y, spd, dt);
+      else if (!tgt && dp > 20) { moveToward(d, S.player.x, S.player.y, spd, dt); unitCapture(d); }
       continue;
     }
     if (d.stance !== 'skirmish') continue;
@@ -1115,15 +1206,11 @@ function update(dt) {
       const da = dist2(e, d.anchor);
       if (da < AGGRO_R*AGGRO_R) { const dd = dist2(d,e); if (dd<td){td=dd;tgt=e;} }
     }
-    if (tgt && td > (d.range*0.8)*(d.range*0.8)) {
-      const dd = Math.sqrt(td);
-      d.x += (tgt.x-d.x)/dd * DEF_MOVE_SPEED * dt;
-      d.y += (tgt.y-d.y)/dd * DEF_MOVE_SPEED * dt;
+    if (tgt && td > (effRange*0.8)*(effRange*0.8)) {
+      stepBehindWalls(d, tgt.x, tgt.y, spd, dt);
     } else if (!tgt) {
       const da = dist(d, d.anchor);
-      if (da > 3) { d.x += (d.anchor.x-d.x)/da * DEF_MOVE_SPEED * dt;
-                    d.y += (d.anchor.y-d.y)/da * DEF_MOVE_SPEED * dt;
-                    unitCapture(d); }
+      if (da > 3) { stepBehindWalls(d, d.anchor.x, d.anchor.y, spd, dt); unitCapture(d); }
     }
   }
 
@@ -1231,11 +1318,14 @@ function update(dt) {
     let tgt=null, td=1e12;
     for (const e of S.enemies) { const dd=dist2(d,e); if (dd<td){td=dd;tgt=e;} }
     const calm = !tgt || td > 60*60;
-    if (tgt && td < d.range*d.range)
-      tgt.hp -= d.dps * (tgt.armored ? d.armorMult : 1) * dt;
-    const spring = nearSpring(d);
-    if (calm) d.hp = Math.min(d.maxHp, d.hp + (spring?20:6)*dt);
-    else if (spring) d.hp = Math.min(d.maxHp, d.hp + 8*dt);
+    const shootRange = d.range + (d.parapet ? 14 : 0);         // firing from behind a wall
+    const inspired = !S.routed && dist2(d, S.player) < MORALE_R*MORALE_R;   // the General fights beside them
+    if (tgt && td < shootRange*shootRange)
+      tgt.hp -= d.dps * (inspired ? 1.25 : 1) * (tgt.armored ? d.armorMult : 1) * dt;
+    const zone = nearSpring(d) || Math.hypot(d.x,d.y) < 50;    // spring aura or the Keep
+    const morale = S.t < (d.moraleUntil || 0);
+    if (calm) d.hp = Math.min(d.maxHp, d.hp + ((zone?20:6) + (morale?12:0))*dt);
+    else if (zone) d.hp = Math.min(d.maxHp, d.hp + 8*dt);
   }
   for (const c of S.cells.values()) {
     if (!c.fort || c.wallHp>=WALL_HP) continue;
@@ -1251,7 +1341,7 @@ function update(dt) {
   }
   for (let i=S.defenders.length-1;i>=0;i--) if (S.defenders[i].hp<=0) {
     if (S.selDef===S.defenders[i]) S.selDef=null;
-    logEvent('💀 '+(S.defenders[i].kind==='vet'?'Veteran':'Defender')+' lost ('+(S.defenders.length-1)+' remain)');
+    logEvent('💀 '+(UNIT_NAMES[S.defenders[i].kind]||'Unit').replace(/^\S+ /,'')+' lost ('+(S.defenders.length-1)+' remain)');
     S.defenders.splice(i,1);
   }
   if (S.officer && S.officer.hp <= 0) {
@@ -1307,16 +1397,18 @@ function updateHUD() {
   $('sStone').textContent = Math.floor(S.stone);
   $('rStone').textContent = nQuarry ? '+'+(nQuarry*RATES.quarry/PLENTY).toFixed(1)+'/s' : '';
   $('sKeep').textContent = Math.max(0,Math.ceil(S.keepHp));
-  const nxt = isFinite(S.nextWaveAt) ? Math.max(0,Math.ceil(S.nextWaveAt-S.t))+'s' : '—';
+  const nxt = isFinite(S.nextWaveAt) ? Math.max(0,Math.ceil((S.nextWaveAt-S.t)/PACE))+'s' : '—';   // shown in REAL seconds
   $('sWave').textContent = S.wavesLaunched + (S.endless ? '' : '/'+S.wavesToWin) + ' · next ' + nxt;
   $('sArmy').textContent = S.defenders.length + (S.officer ? ' +🐎' : '');
   $('sDist').textContent = (S.dist/1000).toFixed(2)+' km';
   $('cDef').textContent = defCost()+' 🌾';
   $('cVet').textContent = defCost()+' 🌾 + 10 ⚙️';
+  $('cKnight').textContent = (defCost()+10)+' 🌾 + 15 ⚙️';
   const smithy = !!ownedConn(c=>c.structure==='smith').length;
   const pc = playerCell();
   $('bDef').classList.toggle('off', S.supply < defCost());
   $('bVet').classList.toggle('off', S.supply < defCost() || S.iron < 10 || !smithy);
+  $('bKnight').classList.toggle('off', S.supply < defCost()+10 || S.iron < 15 || !smithy);
   $('bOff').classList.toggle('off', !!S.officer || S.supply < OFFICER_COST);
   $('bMine').classList.toggle('off', !canAfford(COSTS.mine) || !(pc && pc.feature==='iron' && pc.owner===1));
   $('bQuarry').classList.toggle('off', !canAfford(COSTS.quarry) || !(pc && pc.feature==='stone' && pc.owner===1));
@@ -1431,9 +1523,22 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tp.x,tp.y);
       ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
     }
-    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(4,5*pxPerM), 0, Math.PI*2);
+    const ur = Math.max(5, 5.5*pxPerM);
+    if (d.kind === 'knight') {                                  // knights draw as diamonds
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y-ur*1.25); ctx.lineTo(p.x+ur*1.25, p.y);
+      ctx.lineTo(p.x, p.y+ur*1.25); ctx.lineTo(p.x-ur*1.25, p.y);
+      ctx.closePath();
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, ur, 0, Math.PI*2);
+    }
     ctx.fillStyle = d.color; ctx.fill();
-    ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+    ctx.lineWidth=2.5; ctx.strokeStyle='#0f172a'; ctx.stroke();  // dark outline: visible on white resource chips
+    if (d.retreating) {
+      ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
+      ctx.strokeText('🏳️', p.x+9, p.y-9); ctx.fillText('🏳️', p.x+9, p.y-9);
+    }
     if (d.stance==='hold') {
       ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=1.5;
       const r = Math.max(6,7*pxPerM);
@@ -1570,6 +1675,19 @@ $('diffRow').addEventListener('click', e => {
   CFG = { ...CFG, ...DIFF_PRESETS[b.dataset.diff] };   // preset writes the settings; user can fine-tune after
   storeConfig(); refreshSettingsUI();
 });
+$('paceRow').addEventListener('click', e => {
+  const b = e.target.closest('.pill'); if (!b) return;
+  for (const p of $('paceRow').querySelectorAll('.pill')) p.classList.remove('sel');
+  b.classList.add('sel');
+  CFG.pace = +b.dataset.pace;
+  storeConfig(); refreshSettingsUI();
+});
+/* reflect stored pace in the pills on load */
+(function initPacePills(){
+  const walk = CFG.pace < 0.8;
+  for (const p of $('paceRow').querySelectorAll('.pill')) p.classList.remove('sel');
+  document.querySelector('#paceRow .pill[data-pace="'+(walk?'0.55':'1')+'"]').classList.add('sel');
+})();
 function readMenuChoices() {
   S.wavesToWin = +document.querySelector('#lenRow .pill.sel').dataset.waves;
 }
