@@ -168,7 +168,7 @@
 
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.8</div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.8.1</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Game mode</span></div>
@@ -1395,9 +1395,9 @@ function tdEnemies(dt) {
     let kn=null, kd=1e12;
     for (const k of S.knights) { const dd=dist2(e,k); if (dd<kd){kd=dd;kn=k;} }
     if (kn && kd < ENEMY_MELEE*ENEMY_MELEE) { kn.hp -= e.dps*0.8*dt; continue; }
-    /* the General's bodyguard */
+    /* the General's bodyguard — in TD you are mortal: a 4-cluster beats you */
     const dp = dist(e, S.player);
-    if (!S.routed && dp < BG_RANGE) { S.playerHp -= e.dps*0.4*dt; continue; }
+    if (!S.routed && dp < BG_RANGE) { S.playerHp -= e.dps*0.72*dt; continue; }
     /* at the keep? */
     if (Math.hypot(e.x, e.y) < 14) { S.keepHp -= e.dps*dt; continue; }
     /* march on the keep, flowing around walls (they cannot judge wall damage — only presence) */
@@ -1421,6 +1421,9 @@ function tdEnemies(dt) {
       e.x += sx; e.y += sy;
       e.blockT = 0; e.slideT = Math.max(0, e.slideT - dt*0.5);
     }
+    /* raiders retake the land they cross (and wreck mines/quarries) */
+    const here = cellAt(e.x, e.y);
+    if (here && here.owner===1 && !wallStanding(here)) razeCell(here, dt, e);
   }
 }
 function hitWallTD(c, e, dt) {
@@ -1875,7 +1878,8 @@ function update(dt) {
   }
   const calmPlayer = !S.enemies.some(e => dist2(e,S.player) < 60*60);
   if (calmPlayer && S.playerHp < PLAYER_HP_MAX) {
-    const boost = (Math.hypot(S.player.x,S.player.y) < 50 || nearSpring(S.player)) ? 18 : 6;
+    const zone = Math.hypot(S.player.x,S.player.y) < 50 || nearSpring(S.player);
+    const boost = S.gameMode==='td' ? (zone ? 9 : 2.5) : (zone ? 18 : 6);   // TD: wounds linger
     S.playerHp = Math.min(PLAYER_HP_MAX, S.playerHp + boost*dt);
   }
   if (S.routed && S.playerHp >= PLAYER_HP_MAX*0.6) {
@@ -1886,9 +1890,10 @@ function update(dt) {
 
   /* --- damage: bodyguard (focused) + defenders; healing --- */
   if (!S.routed) {
+    const tdMode = S.gameMode==='td';
     const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE)
-      .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, BG_TARGETS);
-    for (const e of engaged) e.hp -= BG_DPS*BG_MULT*dt;
+      .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, tdMode ? 1 : BG_TARGETS);
+    for (const e of engaged) e.hp -= (tdMode ? 15 : BG_DPS)*BG_MULT*dt;
   }
   for (const d of S.defenders) {
     let tgt=null, td=1e12;
@@ -2052,12 +2057,21 @@ function draw() {
         ctx.fillStyle = 'rgba(220,38,38,'+ (0.45*(1-c.integrity/100)) +')';
         ctx.fillRect(p.x-cellPx/2, p.y-cellPx/2, cellPx-1, cellPx-1);
       }
-      if (c.tier > 0 && c.wallHp > 0) {                       // TD tiered walls
-        const cols = [null, '#b08968', '#9ca3af', '#facc15'];
+      if (c.tier > 0 && c.wallHp > 0) {                       // TD tiered walls: tan / dark masonry / gold
+        const cols = [null, '#b08968', '#1e293b', '#facc15'];
         ctx.strokeStyle = cols[c.tier]; ctx.lineWidth = Math.max(3, cellPx*(0.10+0.05*c.tier));
         ctx.strokeRect(p.x-cellPx/2+2, p.y-cellPx/2+2, cellPx-5, cellPx-5);
+        if (c.tier === 2) {                                    // stone rampart: light mortar line inside dark wall
+          ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = Math.max(1.2, cellPx*0.05);
+          ctx.strokeRect(p.x-cellPx/2+2, p.y-cellPx/2+2, cellPx-5, cellPx-5);
+        }
+        if (c.tier === 3) {                                    // bastion: corner studs
+          ctx.fillStyle = '#78350f';
+          for (const [dx,dy] of [[-1,-1],[1,-1],[1,1],[-1,1]])
+            ctx.fillRect(p.x + dx*(cellPx/2-5) - 2.5, p.y + dy*(cellPx/2-5) - 2.5, 5, 5);
+        }
         const wmax = TD.walls[c.tier].hp;
-        if (c.wallHp < wmax) bar(p.x, p.y + cellPx*0.32, cellPx*0.7, c.wallHp/wmax, cols[c.tier]);
+        if (c.wallHp < wmax) bar(p.x, p.y + cellPx*0.32, cellPx*0.7, c.wallHp/wmax, c.tier===2 ? '#94a3b8' : cols[c.tier]);
         if (c.repairing && c.wallHp < wmax) {
           ctx.font = Math.max(10, cellPx*0.35)+'px sans-serif';
           ctx.textAlign='center'; ctx.textBaseline='middle';
