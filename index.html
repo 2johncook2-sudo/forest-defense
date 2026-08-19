@@ -168,7 +168,7 @@
 
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.8.1</div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.9</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Game mode</span></div>
@@ -222,7 +222,11 @@
   <div id="gpsStatus"></div>
   <div class="howto">
     <b>🏰 Tower Defense mode (default):</b> a steady trickle of raiders marches on your Keep from a hidden
-    favored direction — watch where they come from and fortify that front. <b>Walls are your army:</b> tap 🧱 then
+    favored direction — watch where they come from and fortify that front. <b>But fronts multiply:</b> on Soldier
+    a second attack vector (~90° off) opens in the last third of the round; on Veteran a second opens early and a
+    third late — turtling one side stops working. <b>⚡ Sprint moments:</b> every few minutes an enemy 🛒 supply
+    wagon crosses the field (intercept it YOURSELF for +60🌾+20⚙️+20🧱 — knights can't claim it) or a ✨ windfall
+    cache appears with a 90-second timer. Gold arrows point the way. Drop everything and RUN. <b>Walls are your army:</b> tap 🧱 then
     a cell within 60 m of you (running there IS the game) — empty ground builds a T1 palisade (🌾, archers included,
     holds off 1–2 attackers); tap a wall again to upgrade: T2 stone rampart (+🧱), T3 ballista bastion (+⚙️, kills
     brutes). Walls don't fix themselves: stand near a damaged wall to <b>start</b> repairs (they continue slowly
@@ -303,13 +307,17 @@ const DEFAULTS = {
   startOfficer: 1,   // 1 = begin with an officer
   pace: 1.0,         // world speed: 1.0 for running, ~0.55 for walking (real-world speed ratios preserved)
   gameMode: 'td',        // 'td' (Tower Defense, new default) or 'classic' (Field Army)
+  vectors: 2,            // TD: how many attack fronts open over the round (1-3)
+  vec2At: 0.66,          // TD: when the 2nd front opens (fraction of round)
+  vec3At: 0.8,           // TD: when the 3rd front opens
+  eventGap: 180,         // TD: seconds between sprint events (wagon / cache)
   invasion: 'surround',  // 'surround' (360) or 'directional'
   invasionDir: 90,       // compass bearing for directional mode (deg: N=90, E=0)
 };
 const DIFF_PRESETS = {
-  recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1 },
-  soldier: { waveSize: 1.0,  startSupply: 60, wavePeriod: 110, startOfficer: 1 },
-  veteran: { waveSize: 1.35, startSupply: 45, wavePeriod: 95,  startOfficer: 0 },
+  recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1, vectors: 1 },
+  soldier: { waveSize: 1.0,  startSupply: 60, wavePeriod: 110, startOfficer: 1, vectors: 2, vec2At: 0.66 },
+  veteran: { waveSize: 1.35, startSupply: 45, wavePeriod: 95,  startOfficer: 0, vectors: 3, vec2At: 0.4, vec3At: 0.75 },
 };
 const SETTING_DEFS = [
   ['wavePeriod',  'Wave interval (s)',            60, 180, 5],
@@ -327,6 +335,10 @@ const SETTING_DEFS = [
   ['arenaR',      'Battlefield radius (m)',       400, 800, 50],
   ['startOfficer','Start with an officer (0/1)',  0, 1, 1],
   ['pace',        'World speed × (🚶 walk ≈ 0.55)', 0.4, 1.2, 0.05],
+  ['vectors',     'TD: attack fronts (1–3)',      1, 3, 1],
+  ['vec2At',      'TD: 2nd front opens (fraction)', 0.2, 0.95, 0.05],
+  ['vec3At',      'TD: 3rd front opens (fraction)', 0.3, 0.98, 0.05],
+  ['eventGap',    'TD: sprint-event gap (s)',     90, 420, 15],
 ];
 let CFG = (() => { try { const c = JSON.parse(localStorage.getItem('fdConfig3'));
                         if (c) return { ...DEFAULTS, ...c }; } catch(e){} return { ...DEFAULTS }; })();
@@ -403,6 +415,7 @@ const S = {
   gameMode: 'td',
   knights: [], kCmd: null,
   latentDir: 0, nextSpawnAt: 20, spawnPauseUntil: 0,
+  vectors: [], vecSign: 1, event: null, nextEventAt: 180,
   surviveSecs: 1500, realT: 0, exNextAt: 300, exPanel: false, wallPick: false,
   selDef: null, lineCmd: null, lastOrdered: [],
   wavesLaunched: 0, wavesToWin: 10, diffMult: 1, endless: false,
@@ -1187,6 +1200,9 @@ function saveGame() {
       groups: S.groups.map(g=>({a:g.angle, comp:g.comp, main:g.main?1:0})),
       pend: S.pendingSpawns.map(p=>[p.type, Math.round(p.gx), Math.round(p.gy), p.band, +(p.at-S.t).toFixed(1)]),
       td: S.gameMode==='td' ? { latent:+S.latentDir.toFixed(3), nextIn:+(S.nextSpawnAt-S.t).toFixed(1),
+            vecs: S.vectors.map(v=>+v.toFixed(3)), vecSign: S.vecSign,
+            ev: S.event ? { ...S.event, ttl:+S.event.ttl.toFixed(1) } : null,
+            evIn: +(S.nextEventAt-S.t).toFixed(1),
             pauseIn:+(S.spawnPauseUntil-S.t).toFixed(1), survive:S.surviveSecs, realT:Math.round(S.realT),
             exIn: Math.round(S.exNextAt - S.realT),
             knights: S.knights.map(k=>({x:Math.round(k.x),y:Math.round(k.y),hp:Math.round(k.hp),
@@ -1250,6 +1266,10 @@ function resumeGame(sv) {
   S.pendingSpawns = (sv.pend||[]).map(([type,gx,gy,band,rel]) => ({ at:S.t+rel, type, gx, gy, band }));
   if (sv.td) {
     S.latentDir = sv.td.latent; S.nextSpawnAt = S.t + Math.max(1, sv.td.nextIn);
+    S.vectors = (sv.td.vecs && sv.td.vecs.length) ? sv.td.vecs : [sv.td.latent];
+    S.vecSign = sv.td.vecSign || 1;
+    S.event = sv.td.ev || null;
+    S.nextEventAt = S.t + Math.max(5, sv.td.evIn == null ? 120 : sv.td.evIn);
     S.spawnPauseUntil = S.t + Math.max(0, sv.td.pauseIn); S.surviveSecs = sv.td.survive;
     S.realT = sv.td.realT || 0; S.exNextAt = S.realT + Math.max(30, sv.td.exIn || 300);
     S.knights = (sv.td.knights||[]).map(k => ({ ...mkKnight(k.x, k.y), hp:k.hp, mode:k.mode,
@@ -1308,6 +1328,9 @@ function startGame(mode, origin) {
   if (S.gameMode === 'td') {
     S.latentDir = (CFG.invasion==='directional' ? (CFG.invasionDir==null?90:CFG.invasionDir) * Math.PI/180
                                                 : Math.random()*Math.PI*2);
+    S.vectors = [S.latentDir];
+    S.vecSign = Math.random() < 0.5 ? 1 : -1;
+    S.nextEventAt = 150 + Math.random()*60;
     S.nextSpawnAt = 25;
     S.knights = [ mkKnight(10, 10) ];
     S.exNextAt = 300;
@@ -1367,14 +1390,30 @@ $('btnEndless').onclick = () => {
 
 /* =================== TOWER DEFENSE ENGINE =================== */
 const wallStanding = c => c && c.tier > 0 && c.wallHp > 0 && c.owner === 1;
+function openVector(n) {
+  /* new fronts open ~90°±25° off the original bearing, alternating sides — total span ~180°+ */
+  const off = (Math.PI/2) + (Math.random()-0.5)*(50*Math.PI/180);
+  const sign = n === 2 ? S.vecSign : -S.vecSign;
+  const a = S.latentDir + sign*off;
+  S.vectors.push(a);
+  banner('⚠️ NEW ATTACK FRONT — ' + compass(a) + '!', 3500);
+  toast('⚠️ Scouts report raiders massing to the ' + compass(a) + ' — a second front!', 'bad');
+  logEvent('⚠️ Attack front #' + S.vectors.length + ' opened (' + compass(a) + ')');
+}
 function tdSpawner(dt) {
+  /* fronts open on schedule (fractions of the round; endless keeps them all open) */
+  const frac = S.surviveSecs ? S.t / S.surviveSecs : 1;
+  if (S.vectors.length < Math.min(2, CFG.vectors) && frac >= CFG.vec2At) openVector(2);
+  if (S.vectors.length < Math.min(3, CFG.vectors) && frac >= CFG.vec3At) openVector(3);
   if (S.t < S.nextSpawnAt || S.t < S.spawnPauseUntil) return;
-  /* ramping trickle: interval halves every spawnHalf seconds */
-  const interval = Math.max(TD.spawnMin, TD.spawnBase * Math.pow(0.5, S.t / TD.spawnHalf));
+  /* ramping trickle: interval halves every spawnHalf seconds; more fronts = more total pressure */
+  const interval = Math.max(TD.spawnMin, TD.spawnBase * Math.pow(0.5, S.t / TD.spawnHalf))
+                   * Math.pow(0.8, S.vectors.length - 1);
   S.nextSpawnAt = S.t + interval;
-  /* latent-direction triangular distribution: 80% within ±60° (triangular), 20% anywhere */
+  /* per-spawn: pick an open front; triangular ±60° around it; 20% anywhere */
   let a;
-  if (Math.random() < 0.8) a = S.latentDir + (Math.random() + Math.random() - 1) * (Math.PI/3);
+  const vec = S.vectors[Math.floor(Math.random()*S.vectors.length)] ?? S.latentDir;
+  if (Math.random() < 0.8) a = vec + (Math.random() + Math.random() - 1) * (Math.PI/3);
   else a = Math.random() * Math.PI * 2;
   /* composition ramps: wolves from ~6 min, brutes from ~12 min */
   const r = Math.random();
@@ -1506,6 +1545,68 @@ function tdKnights(dt) {
   }
 }
 
+/* =================== TD SPRINT EVENTS (general-only prizes) =================== */
+function spawnSprintEvent() {
+  if (Math.random() < 0.5) {
+    /* enemy supply wagon: crosses the field on a chord — intercept it YOURSELF */
+    const b = Math.random()*Math.PI*2;                    // bearing of closest approach
+    const dOff = 120 + Math.random()*100;                 // how close the chord passes the keep
+    const mx = Math.cos(b)*dOff, my = Math.sin(b)*dOff;
+    const px2 = -Math.sin(b), py2 = Math.cos(b);          // chord direction
+    const sgn = Math.random()<0.5 ? 1 : -1;
+    S.event = { type:'wagon', x: mx + px2*420*sgn, y: my + py2*420*sgn,
+                tx: mx - px2*420*sgn, ty: my - py2*420*sgn, ttl: 240 };
+    const d = Math.round(dist(S.event, S.player));
+    banner('🛒 Enemy supply wagon spotted!', 3000);
+    toast('🛒 Wagon crossing '+compass(Math.atan2(S.event.y,S.event.x))+', '+d+' m away — intercept it YOURSELF for its cargo!', 'good');
+    logEvent('🛒 Supply wagon sighted ('+d+' m)');
+  } else {
+    /* windfall cache: race the clock */
+    const a = Math.random()*Math.PI*2, r = 150 + Math.random()*150;
+    let ex = S.player.x + Math.cos(a)*r, ey = S.player.y + Math.sin(a)*r;
+    const er = Math.hypot(ex, ey);
+    if (er > WORLD_R*0.88) { ex *= WORLD_R*0.88/er; ey *= WORLD_R*0.88/er; }   // radially inside the world
+    const kind = ['supply','iron','stone'][Math.floor(Math.random()*3)];
+    S.event = { type:'cache', x:ex, y:ey, ttl: 90, kind };
+    const d = Math.round(Math.hypot(ex-S.player.x, ey-S.player.y));
+    banner('✨ Windfall spotted — 90 s!', 3000);
+    toast('✨ A '+kind+' cache '+d+' m to the '+compass(Math.atan2(ey-S.player.y, ex-S.player.x))+' — sprint before it\'s gone!', 'good');
+    logEvent('✨ Windfall cache spotted ('+d+' m, '+kind+')');
+  }
+}
+function tdEvents(dt) {
+  if (!S.event && S.t >= S.nextEventAt) spawnSprintEvent();
+  if (!S.event) return;
+  const ev = S.event;
+  ev.ttl -= dt;
+  if (ev.type === 'wagon') {
+    moveToward(ev, ev.tx, ev.ty, 1.1, dt);
+    if (!S.routed && dist(ev, S.player) < 25) {
+      S.supply += 60; S.iron += 20; S.stone += 20;
+      banner('🛒 WAGON CAPTURED! +60🌾 +20⚙️ +20🧱', 3000);
+      logEvent('🛒 Supply wagon captured (+60🌾 +20⚙️ +20🧱)');
+      S.event = null;
+    } else if (ev.ttl <= 0 || dist(ev, {x:ev.tx, y:ev.ty}) < 10) {
+      toast('🛒 The wagon slipped away…', 'bad');
+      logEvent('🛒 Supply wagon escaped');
+      S.event = null;
+    }
+  } else {
+    if (!S.routed && dist(ev, S.player) < 20) {
+      const gain = ev.kind==='supply' ? '+50🌾' : ev.kind==='iron' ? '+20⚙️' : '+20🧱';
+      if (ev.kind==='supply') S.supply += 50; else if (ev.kind==='iron') S.iron += 20; else S.stone += 20;
+      banner('✨ CACHE CLAIMED! '+gain, 2500);
+      logEvent('✨ Windfall claimed ('+gain+')');
+      S.event = null;
+    } else if (ev.ttl <= 0) {
+      toast('✨ The cache is gone…', 'bad');
+      logEvent('✨ Windfall expired unclaimed');
+      S.event = null;
+    }
+  }
+  if (!S.event) S.nextEventAt = S.t + CFG.eventGap * (0.8 + Math.random()*0.5);
+}
+
 /* =================== UPDATE =================== */
 let lastT = null;
 function frame(now) {
@@ -1625,6 +1726,7 @@ function update(dt) {
   if (S.gameMode === 'td') {
     tdKnights(dt);
     tdWalls(dt);
+    tdEvents(dt);
     if (CFG.strength !== 0 && S.realT >= S.exNextAt) {
       S.exNextAt = S.realT + 300;
       banner('💪 20 push-ups when safe!', 3500);
@@ -2299,6 +2401,45 @@ function draw() {
       ctx.fillText('×'+b.n, x+23, y-14.5);
     }
   })();
+
+  /* sprint events: wagon / cache */
+  if (S.event) {
+    const ev = S.event, p = px(ev.x, ev.y);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    if (ev.type === 'wagon') {
+      const tp = px(ev.tx, ev.ty);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tp.x,tp.y);
+      ctx.strokeStyle='rgba(251,191,36,0.45)'; ctx.lineWidth=1.5; ctx.setLineDash([4,7]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+      ctx.strokeStyle='#b45309'; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.font='15px sans-serif'; ctx.fillText('🛒', p.x, p.y);
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+      ctx.strokeStyle='#b45309'; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x, p.y, 17, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(ev.ttl/90));
+      ctx.strokeStyle='#fbbf24'; ctx.lineWidth=3; ctx.stroke();
+      ctx.font='14px sans-serif'; ctx.fillText('✨', p.x, p.y);
+    }
+    /* gold pointer when the prize is off-screen */
+    if (!onScreen(p)) {
+      const cx2 = innerWidth/2, cy2 = innerHeight/2;
+      const a = Math.atan2(p.y-cy2, p.x-cx2);
+      const m = 52;
+      const t = Math.min(
+        Math.abs((a>-Math.PI/2 && a<Math.PI/2 ? innerWidth-m-cx2 : m-cx2) / Math.cos(a) || 1e9),
+        Math.abs((a>0 ? innerHeight-m-110-cy2 : m+70-cy2) / Math.sin(a) || 1e9));
+      const x = cx2 + Math.cos(a)*t, y = cy2 + Math.sin(a)*t;
+      ctx.save();
+      ctx.translate(x,y); ctx.rotate(a);
+      ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-7,-9); ctx.lineTo(-7,9); ctx.closePath();
+      ctx.fillStyle = '#fbbf24'; ctx.fill();
+      ctx.rotate(-a);
+      ctx.font='13px sans-serif'; ctx.fillText(ev.type==='wagon' ? '🛒' : '✨', 0, -17);
+      ctx.restore();
+    }
+  }
 
   drawOffscreenArrows();
 
