@@ -89,6 +89,10 @@
             background: rgba(0,0,0,.35); border: 1px solid #24503a; border-radius: 10px;
             padding: 8px 10px; font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
   #endLog .lt { color: #86efac; font-variant-numeric: tabular-nums; margin-right: 6px; }
+#fabDraftCards { display:flex; flex-direction:column; gap:10px; width:min(92vw,340px); margin-top:10px }
+.relicCard { background:#1c1917; border:1.5px solid #b45309; border-radius:14px; padding:12px 14px; text-align:left; color:#fef3c7; font-size:14px; cursor:pointer }
+.relicCard b { font-size:15.5px } .relicCard small { color:#d6d3d1; display:block; margin-top:3px; font-weight:400 }
+.relicCard:active { background:#292524 }
 </style>
 </head>
 <body>
@@ -122,6 +126,9 @@
   <button class="bbtn" id="bTower"><span class="ico">🗼</span>Watchtower<span class="cost">40 🌾</span></button>
   <button class="bbtn" id="bFort"><span class="ico">🧱</span>Wall<span class="cost" id="cFort">15 🌾 + 15 🧱</span></button>
   <button class="bbtn" id="bTDKnight" style="display:none"><span class="ico">🐴</span>Knight<span class="cost">30 🌾 + 15 ⚙️</span></button>
+  <button class="bbtn" id="bBrazier" style="display:none"><span class="ico">🔥</span>Brazier<span class="cost">10 🌾 + 5 🧱</span></button>
+  <button class="bbtn" id="bHalt" style="display:none"><span class="ico">⛺</span>Circle up<span class="cost">halt &amp; fort</span></button>
+  <button class="bbtn" id="bMilitia" style="display:none"><span class="ico">🗡️</span>Militia<span class="cost">15 🌾/min</span></button>
 </div>
 
 <div id="stanceBar">
@@ -168,13 +175,17 @@
 
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.9</div>
+  <div id="fabMeta" style="display:none;font-size:12.5px;color:#a16207;margin:-2px 0 4px"></div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.14</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Game mode</span></div>
   <div class="selrow" id="modeRow">
-    <button class="pill sel" data-mode="td">🏰 Tower Defense<br><small>new — walls & knights</small></button>
-    <button class="pill" data-mode="classic">⚔️ Field Army<br><small>classic — troops & bands</small></button>
+    <button class="pill sel" data-mode="td">🏰 Tower Defense<br><small>walls & knights</small></button>
+    <button class="pill" data-mode="fable">⚜️ FableAug<br><small>nights · bosses · relics</small></button>
+    <button class="pill" data-mode="fableb">⚔️ Warpath<br><small>FableAugB — burn their camps</small></button>
+    <button class="pill" data-mode="fablec">🐂 Exodus<br><small>FableAugC — lead them home</small></button>
+    <button class="pill" data-mode="classic">⚔️ Field Army<br><small>classic troops</small></button>
   </div>
   <div class="selrow"><span class="lbl">Session length</span></div>
   <div class="selrow" id="lenRow">
@@ -182,10 +193,12 @@
     <button class="pill sel" data-waves="10" data-mins="25">Standard<br><small>~25 min</small></button>
     <button class="pill" data-waves="14" data-mins="40">Epic<br><small>~40 min</small></button>
   </div>
-  <div class="selrow"><span class="lbl" id="strengthLbl">Strength add-on (💪 push-ups / kettlebells / chin-ups)</span></div>
+  <div class="selrow"><span class="lbl" id="strengthLbl">Strength add-on (💪) &nbsp;·&nbsp; Alerts (🔊 sound + vibration)</span></div>
   <div class="selrow" id="strengthRow">
     <button class="pill sel" data-str="1">💪 On</button>
-    <button class="pill" data-str="0">Off</button>
+    <button class="pill" data-str="0">💪 Off</button>
+    <button class="pill sel" data-al="1" id="alOn">🔊 On</button>
+    <button class="pill" data-al="0" id="alOff">🔇 Off</button>
   </div>
   <div class="selrow"><span class="lbl">Difficulty (presets — fine-tune below)</span></div>
   <div class="selrow" id="diffRow">
@@ -224,7 +237,7 @@
     <b>🏰 Tower Defense mode (default):</b> a steady trickle of raiders marches on your Keep from a hidden
     favored direction — watch where they come from and fortify that front. <b>But fronts multiply:</b> on Soldier
     a second attack vector (~90° off) opens in the last third of the round; on Veteran a second opens early and a
-    third late — turtling one side stops working. <b>⚡ Sprint moments:</b> every few minutes an enemy 🛒 supply
+    third late — turtling one side stops working. <b>⚡ Sprint moments:</b> every few minutes an enemy 🐂 supply
     wagon crosses the field (intercept it YOURSELF for +60🌾+20⚙️+20🧱 — knights can't claim it) or a ✨ windfall
     cache appears with a 90-second timer. Gold arrows point the way. Drop everything and RUN. <b>Walls are your army:</b> tap 🧱 then
     a cell within 60 m of you (running there IS the game) — empty ground builds a T1 palisade (🌾, archers included,
@@ -278,6 +291,12 @@
   </div>
 </div>
 
+<div class="screen" id="fabDraft" style="display:none">
+  <h1 style="font-size:26px">🌅 Dawn — choose a relic</h1>
+  <div class="sub" id="fabDraftSub">The night is survived. The fable grows.</div>
+  <div id="fabDraftCards"></div>
+</div>
+
 <div class="screen" id="endScreen" style="display:none">
   <h1 id="endTitle">Victory!</h1>
   <div class="sub" id="endSub"></div>
@@ -311,13 +330,15 @@ const DEFAULTS = {
   vec2At: 0.66,          // TD: when the 2nd front opens (fraction of round)
   vec3At: 0.8,           // TD: when the 3rd front opens
   eventGap: 180,         // TD: seconds between sprint events (wagon / cache)
+  wallMinRing: 1,        // TD: walls must be built at least this many cells away from the Keep
+  alerts: 1,             // sound + vibration cues
   invasion: 'surround',  // 'surround' (360) or 'directional'
   invasionDir: 90,       // compass bearing for directional mode (deg: N=90, E=0)
 };
 const DIFF_PRESETS = {
-  recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1, vectors: 1 },
-  soldier: { waveSize: 1.0,  startSupply: 60, wavePeriod: 110, startOfficer: 1, vectors: 2, vec2At: 0.66 },
-  veteran: { waveSize: 1.35, startSupply: 45, wavePeriod: 95,  startOfficer: 0, vectors: 3, vec2At: 0.4, vec3At: 0.75 },
+  recruit: { waveSize: 0.7,  startSupply: 90, wavePeriod: 125, startOfficer: 1, vectors: 1, wallMinRing: 0 },
+  soldier: { waveSize: 1.0,  startSupply: 60, wavePeriod: 110, startOfficer: 1, vectors: 2, vec2At: 0.66, wallMinRing: 1 },
+  veteran: { waveSize: 1.35, startSupply: 45, wavePeriod: 95,  startOfficer: 0, vectors: 3, vec2At: 0.4, vec3At: 0.75, wallMinRing: 2 },
 };
 const SETTING_DEFS = [
   ['wavePeriod',  'Wave interval (s)',            60, 180, 5],
@@ -339,6 +360,7 @@ const SETTING_DEFS = [
   ['vec2At',      'TD: 2nd front opens (fraction)', 0.2, 0.95, 0.05],
   ['vec3At',      'TD: 3rd front opens (fraction)', 0.3, 0.98, 0.05],
   ['eventGap',    'TD: sprint-event gap (s)',     90, 420, 15],
+  ['wallMinRing', 'TD: wall standoff from Keep (cells)', 0, 3, 1],
 ];
 let CFG = (() => { try { const c = JSON.parse(localStorage.getItem('fdConfig3'));
                         if (c) return { ...DEFAULTS, ...c }; } catch(e){} return { ...DEFAULTS }; })();
@@ -399,7 +421,7 @@ const TD = {
 const PLAYER_POWER = 5;
 const ASSAULT_RATIO = 1.5;
 const FEATURE_ICONS = { grain:'🌾', iron:'⛰️', stone:'🪨', spring:'⛲' };
-const STRUCT_ICONS  = { mine:'⛏️', quarry:'⚒️', smith:'🔥', tower:'🗼', guard:'🏹' };
+const STRUCT_ICONS  = { mine:'⛏️', quarry:'⚒️', smith:'🔥', tower:'🗼', guard:'🏹', brazier:'🕯️' };
 
 /* =================== STATE =================== */
 const S = {
@@ -437,6 +459,10 @@ const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
 const key = (i,j) => i+','+j;
 const defCost = () => DEF_BASE + DEF_SCALE * S.defenders.length;
 const fmtT = s => Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const TDL = () => S.gameMode === 'td' || S.gameMode === 'fable' || S.gameMode === 'fableb';   // fable modes = TD supersets
+const FAB = () => S.gameMode === 'fable';
+const FABB = () => S.gameMode === 'fableb';
+const FABC = () => S.gameMode === 'fablec';
 function logEvent(msg) { S.log.push([Math.round(S.t), msg]); if (S.log.length > 400) S.log.shift(); }
 function toLL(x, y) {
   const lat = S.origin.lat + y / 111320;
@@ -785,6 +811,10 @@ function dispatchCrew(type, cell) {
 function tdWallAt(cell) {
   /* build T1 or upgrade an existing wall one tier — General must be within command range of the cell */
   if (!cell || cell.owner !== 1) return toast('Walls need controlled ground', 'bad');
+  const ring = Math.max(Math.abs(cell.i), Math.abs(cell.j));
+  if (ring <= (CFG.wallMinRing || 0))
+    return toast('Too close — the Keep\'s own garrison holds this ground. Build at least '+
+                 ((CFG.wallMinRing||0)+1)+' cells out', 'bad');
   if (Math.hypot(cell.cx-S.player.x, cell.cy-S.player.y) > COMMAND_RANGE)
     return toast('Too far — get within '+COMMAND_RANGE+' m to direct construction', 'bad');
   if (cell.structure && cell.structure!=='keep') return toast('Something is already built here', 'bad');
@@ -801,11 +831,21 @@ function tdWallAt(cell) {
 }
 function build(type) {
   /* ---- Tower Defense: walls are tap-targeted; mines/quarries need your presence ---- */
-  if (S.gameMode === 'td') {
+  if (TDL()) {
     if (type === 'fort') {
       S.wallPick = !S.wallPick;
       S.kCmd = null;
       return toast(S.wallPick ? '🧱 Tap a cell within '+COMMAND_RANGE+' m — empty ground builds T1, an existing wall upgrades' : 'Wall placement cancelled');
+    }
+    if (type === 'brazier') {
+      if (!FAB()) return;
+      if (S.supply < 10 || S.stone < 5) return toast('Not enough resources (10 🌾 + 5 🧱)', 'bad');
+      const c = cellAt(S.player.x, S.player.y);
+      if (!c || c.owner !== 1) return toast('Braziers need owned ground under your feet', 'bad');
+      if (c.feature || c.structure || c.tier) return toast('This ground is taken', 'bad');
+      S.supply -= 10; S.stone -= 5; c.structure = 'brazier';
+      logEvent('🕯️ Brazier raised — firelight holds the dark');
+      return toast('🕯️ Brazier raised — light at night; wolves fear its glow', 'good');
     }
     if (type === 'mine' || type === 'quarry') {
       if (!canAfford(COSTS[type])) return toast('Not enough resources', 'bad');
@@ -860,6 +900,7 @@ $('bDef').onclick    = () => placeDefender('def');
 $('bVet').onclick    = () => placeDefender('vet');
 $('bKnight').onclick = () => placeDefender('knight');
 $('bOff').onclick    = buyOfficer;
+$('bBrazier').onclick = () => build('brazier');
 $('bTDKnight').onclick = () => {
   if (S.knights.length >= TD.knight.cap) return toast('Knight cap reached ('+TD.knight.cap+')', 'bad');
   if (S.supply < TD.knight.costS || S.iron < TD.knight.costI)
@@ -947,21 +988,33 @@ $('exChin').onclick = () => {
 };
 $('exKb').onclick = () => {
   $('exPanel').style.display='none';
-  const n = S.enemies.length;
+  const keepG = (FABB() && S.fabb) ? S.enemies.filter(e => e.garrison) : [];
+  const n = S.enemies.length - keepG.length;
   S.enemies.length = 0;
+  for (const g of keepG) S.enemies.push(g);
   S.spawnPauseUntil = S.t + 120;
+  sfx('warcry');
   banner('⚡ WAR CRY — the field empties!', 3000);
   logEvent('💪 Kettlebell complex — '+n+' enemies fled, spawns paused 2 min');
 };
 $('btnLegend').onclick = () => {
   const L = $('legend');
   if (L.style.display === 'block') { L.style.display = 'none'; return; }
-  L.innerHTML = S.gameMode==='td' ? `<b>Legend</b><br>
+  const fabExtra = FAB() ? `<br>👑 gold pip = named elite · ☠ the Warlord · 🗡 duel champion<br>
+    🕯️ brazier (night light — wolves fear it) · ⚡ Battle Stride (run fast to charge)<br>
+    red edge arcs = threat compass (where the mass is)`
+  : FABB() ? `<br>❓ rumor of a camp — confirm within 130 m · 🏕️ camp (smoke = confirmed)<br>
+    stand at their fire to 🔥 burn it · ⚑ War March fervor (sustained pace arms the party)<br>
+    route a knight to a wall = he garrisons it (tap to recall)`
+  : FABC() ? `<br>🐂 the train follows YOUR trail — stop and it stops · red tide = the Pursuit<br>
+    🛡 buffer = road between tail and tide · ⛺ circle up = instant fort (spends buffer)<br>
+    🌾🌿🪵 forage · ⚠️🐺 scouted ambush · tap 🐴 then a wagon = assign escort` : '';
+  L.innerHTML = TDL() ? `<b>Legend</b><br>
     🔵 you (aura = bodyguard) · 🟣◆ knight<br>
     🟤 T1 palisade · ⬜ T2 rampart · 🟡 T3 ballista<br>
     🔴 grunt · 🟠 wolf (fast) · 🟥 big = brute (armored)<br>
     ×N badge = that many stacked · 🏰 the Keep<br>
-    🌾⛰️🪨⛲ resources (green ring = connected)` : `<b>Legend</b><br>
+    🌾⛰️🪨⛲ resources (green ring = connected)` + fabExtra : `<b>Legend</b><br>
     🔵 you · 🔵 defender · 🟡 swordsman · 🟣◆ knight<br>
     🐎 officer · 🔨 crew · ⚑ enemy officer<br>
     <span style="color:#f87171">red ⚑ attack</span> · <span style="color:#cbd5e1">black ⚑ bandit</span> · <span style="color:#fbbf24">amber ⚑ muster</span><br>
@@ -1014,7 +1067,20 @@ $('obLine').onclick   = () => {
 function tdClick(p) {
   /* knight waypoints */
   if (S.kCmd) {
-    if (Math.hypot(p.x,p.y) > WORLD_R) return toast('Outside the world', 'bad');
+    /* Exodus: tap a wagon to assign this knight as its escort */
+    if (FABC() && S.fc) {
+      let wi = -1, wd = 1e12;
+      S.fc.wagons.forEach((w, i) => { if (!w.dead) { const dd = (w.x-p.x)**2 + (w.y-p.y)**2;
+        if (dd < wd) { wd = dd; wi = i; } } });
+      if (wi >= 0 && wd < 22*22) {
+        const k = S.kCmd.knight;
+        k.mode = 'escort'; k.escortIdx = wi; k.wps = []; S.kCmd = null;
+        const w = S.fc.wagons[wi];
+        toast('🐴 ' + (k.name||'The knight') + ' rides guard on the ' + w.type + ' wagon', 'good');
+        logEvent('🐴 ' + (k.name||'Knight') + ' assigned to the ' + w.type + ' wagon');
+        return;
+      }
+    } else if (Math.hypot(p.x,p.y) > WORLD_R) return toast('Outside the world', 'bad');
     S.kCmd.points.push(p);
     if (S.kCmd.points.length >= 3) {
       const k = S.kCmd.knight;
@@ -1043,7 +1109,18 @@ function tdClick(p) {
 function onMapClick(ev) {
   if (S.phase !== 'playing') return;
   const p = fromLL(ev.latlng.lat, ev.latlng.lng);
-  if (S.gameMode === 'td') { tdClick(p); return; }
+  if (FABC()) { tdClick(p); return; }
+  if (TDL()) {
+    if (FABB() && S.knights.some(k => k.mode === 'posted')) {
+      for (const k of S.knights) if (k.mode === 'posted' && Math.hypot(k.x-p.x, k.y-p.y) < 25
+          && Math.hypot(k.x-S.player.x, k.y-S.player.y) < COMMAND_RANGE) {
+        k.mode = 'returning';
+        toast('🐴 ' + (k.name||'The knight') + ' recalled — riding to you', 'good');
+        return;
+      }
+    }
+    tdClick(p); return;
+  }
   /* remote build target pick */
   if (S.buildPick) {
     const site = findBuildSite(S.buildPick.type, p, 45);
@@ -1180,7 +1257,7 @@ function saveGame() {
     for (const c of S.cells.values())
       if (c.owner===1 || c.feature || (c.structure && c.structure!=='keep') || c.fort || c.tier)
         cells.push([c.i, c.j, c.owner, c.feature, c.structure, c.fort?1:0,
-                    Math.round(c.wallHp), Math.round(c.integrity), c.ballista?1:0, c.tier||0]);
+                    Math.round(c.wallHp), Math.round(c.integrity), c.ballista?1:0, c.tier||0, c.scars||0]);
     const sv = { v:6, at: Date.now(), cfg: CFG, gm:S.gameMode, mode:S.mode, origin:S.origin, t:S.t,
       player:{x:S.player.x, y:S.player.y}, hp:S.playerHp, routed:S.routed?1:0,
       supply:S.supply, iron:S.iron, stone:S.stone, keep:S.keepHp,
@@ -1195,18 +1272,60 @@ function saveGame() {
       defs: S.defenders.map(d=>[d.kind, Math.round(d.x), Math.round(d.y), Math.round(d.hp),
                                 Math.round(d.anchor.x), Math.round(d.anchor.y),
                                 d.stance==='hold'?1:d.stance==='follow'?2:0]),
-      foes: S.enemies.map(e=>[e.type, Math.round(e.x), Math.round(e.y), Math.round(e.hp), e.band]),
+      foes: S.enemies.map(e=>[e.type, Math.round(e.x), Math.round(e.y), Math.round(e.hp), e.band,
+        (e.elite||e.warlord||e.champ||e.garrison||e.avenger||e.chief||e.warchief||e.fcChaser||e.fcFree) ?
+        { n:e.eName, tr:e.trait||0, el:e.elite?1:0, wl:e.warlord?1:0, ch:e.champ?1:0,
+          mh:Math.round(e.maxHp), dp:+e.dps.toFixed(1), sp:+e.speed.toFixed(2), bt:e.bounty, pw:e.power, r:e.r,
+          co:e.color, ar:e.armored?1:0,
+          g:e.garrison?1:0, cid:(e.cid!=null?e.cid:null), ax:e.ax!=null?Math.round(e.ax):null, ay:e.ay!=null?Math.round(e.ay):null,
+          av:e.avenger?1:0, au:e.avengerUntil!=null?+(e.avengerUntil-S.t).toFixed(1):null,
+          cf:e.chief?1:0, wc:e.warchief?1:0,
+          fch:e.fcChaser?1:0, ftd:e.trailD!=null?Math.round(e.trailD):null, ffr:e.fcFree?1:0 } : 0]),
       bands: [...S.bands.entries()].map(([id,b])=>[id, b.mode, b.warnedRaid?1:0]),
       groups: S.groups.map(g=>({a:g.angle, comp:g.comp, main:g.main?1:0})),
       pend: S.pendingSpawns.map(p=>[p.type, Math.round(p.gx), Math.round(p.gy), p.band, +(p.at-S.t).toFixed(1)]),
-      td: S.gameMode==='td' ? { latent:+S.latentDir.toFixed(3), nextIn:+(S.nextSpawnAt-S.t).toFixed(1),
+      td: (TDL() || FABC()) ? { latent:+S.latentDir.toFixed(3), nextIn:+(S.nextSpawnAt-S.t).toFixed(1),
             vecs: S.vectors.map(v=>+v.toFixed(3)), vecSign: S.vecSign,
             ev: S.event ? { ...S.event, ttl:+S.event.ttl.toFixed(1) } : null,
             evIn: +(S.nextEventAt-S.t).toFixed(1),
             pauseIn:+(S.spawnPauseUntil-S.t).toFixed(1), survive:S.surviveSecs, realT:Math.round(S.realT),
             exIn: Math.round(S.exNextAt - S.realT),
             knights: S.knights.map(k=>({x:Math.round(k.x),y:Math.round(k.y),hp:Math.round(k.hp),
-              mode:k.mode,wps:k.wps,wpIdx:k.wpIdx,refuse:k.refuse?1:0})) } : null,
+              mode:k.mode,wps:k.wps,wpIdx:k.wpIdx,refuse:k.refuse?1:0,
+              nm:k.name||null,kl:k.kills||0,rk:k.rank||0,cp:k.campaigns||0,es:k.escortIdx!=null?k.escortIdx:null})) } : null,
+      fc: (FABC() && S.fc) ? (F => ({
+            tr: F.trail.filter((_,i) => i % 2 === 0 || i === F.trail.length-1)
+                 .map(pt => [Math.round(pt.x), Math.round(pt.y), Math.round(pt.d)]),
+            hd:+F.head.toFixed(1), pu:+F.pursuit.toFixed(1), rd:F.road, rdd:+F.roadDone.toFixed(1),
+            wg: F.wagons.map(w => ({ t:w.type, hp:Math.round(w.hp), s:w.souls, dd:w.dead?1:0 })),
+            so:F.souls, ss:F.soulsStart, sg:F.soulsGained||0, mo:+F.morale.toFixed(1),
+            ar:F.armed?1:0, ha:F.halted?1:0, rt:+F.ringT.toFixed(1),
+            rc:F.ringC ? [Math.round(F.ringC.x), Math.round(F.ringC.y)] : null,
+            hw:+(F.howlUntil-S.t).toFixed(1), nc:+(F.nextChaserAt-S.t).toFixed(1),
+            hu:F.huntAt, ev:+(F.eventAt-S.t).toFixed(1), ox:+(F.oxUntil-S.t).toFixed(1),
+            fo:F.forage.map(f=>[Math.round(f.x),Math.round(f.y),f.kind]),
+            am:F.ambushes.map(a=>[Math.round(a.x),Math.round(a.y),a.n,a.wolfy?1:0,a.revealed?1:0]),
+            sp:F.springs.map(z=>[Math.round(z.x),Math.round(z.y)]),
+            st:F.straggler ? [Math.round(F.straggler.x),Math.round(F.straggler.y),Math.round(F.straggler.ttl),F.straggler.n] : null,
+            lg:[Math.round(F.lastGenPos.x),Math.round(F.lastGenPos.y)],
+            pins:F.pins.slice(-80), rs:F.rescues, rn:+F.renown.toFixed(1),
+            hn:F.havenName, hp2:F.havenPos ? [Math.round(F.havenPos.x),Math.round(F.havenPos.y)] : null,
+            mq:F.mileQ, cr:F.creep }))(S.fc) : null,
+      fabb: (FABB() && S.fabb) ? { war:S.fabb.war, front:S.fabb.front, ban:S.fabb.banners,
+            rn:+S.fabb.renown.toFixed(1), fv:+S.fabb.fervorT.toFixed(1), pp:S.fabb.pips,
+            tu:S.fabb.tierUpSecs, bs:+(S.t - S.fabb.besetAt).toFixed(1),
+            camps: S.fabb.camps.map(c=>({ id:c.id, nm:c.name, x:Math.round(c.x), y:Math.round(c.y),
+              t:c.tier, rv:c.revealed?1:0, dd:c.dead?1:0, br:+c.burn.toFixed(1), ll:c.leaderless?1:0,
+              rj:+c.rumorJit.toFixed(3), gu:c.garrisonUp?1:0,
+              ns:+(c.nextSpawnAt-S.t).toFixed(1), tuAt:+(c.tierUpAt-S.t).toFixed(1),
+              nr:+(c.nextRaidAt-S.t).toFixed(1) })),
+            cit: (c => ({ nm:c.name, x:Math.round(c.x), y:Math.round(c.y), rv:c.revealed?1:0,
+              dd:c.dead?1:0, br:+c.burn.toFixed(1), gu:c.garrisonUp?1:0 }))(S.fabb.citadel) } : null,
+      fab: (FAB() && S.fab) ? { n:S.fab.nightNum, nm:S.fab.nightMod, no:S.fab.nightOn?1:0,
+            na:S.fab.nightAnnounced?1:0, rl:S.fab.relics, rn:+S.fab.renown.toFixed(1),
+            wa:Math.round(S.fab.warlordAt), wu:S.fab.warlordUp?1:0, sc:S.fab.spawnCount,
+            st:Math.round(S.fab.stride), sr:S.fab.strideReady?1:0,
+            tl:S.fab.threatLog.slice(-200) } : null,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(sv));
   } catch(e){}
@@ -1229,13 +1348,13 @@ function resumeGame(sv) {
   if (S.mode==='sim') { $('joyZone').style.display = 'block'; $('btnSpeed').style.display = 'block'; }
   initMap([sv.origin.lat, sv.origin.lng]);
   genGrid();
-  for (const [i,j,owner,feature,structure,fort,wallHp,integrity,ballista,tier] of sv.cells) {
+  for (const [i,j,owner,feature,structure,fort,wallHp,integrity,ballista,tier,scars] of sv.cells) {
     const c = S.cells.get(key(i,j)); if (!c) continue;
     c.owner = owner; c.feature = feature || null;
     if (structure) c.structure = structure;
     c.fort = !!fort; c.wallHp = wallHp || 0;
     c.integrity = (integrity == null) ? 100 : integrity;
-    c.ballista = !!ballista; c.tier = tier || 0;
+    c.ballista = !!ballista; c.tier = tier || 0; c.scars = scars || 0;
   }
   S.t = sv.t; S.player = { x:sv.player.x, y:sv.player.y };
   S.playerHp = sv.hp; S.routed = !!sv.routed;
@@ -1255,9 +1374,26 @@ function resumeGame(sv) {
              stance: stanceIdx===1?'hold':stanceIdx===2?'follow':'skirmish',
              moveTarget:null, retreating:false, moraleUntil:0 };
   });
-  S.enemies = sv.foes.map(([type,x,y,hp,band]) => {
-    const st = ENEMY_TYPES[type];
-    return { type, ...st, hp, maxHp:st.hp, speed: st.speed*ENEMY_SPD, x, y, band, target:null, retargetIn:0 };
+  S.enemies = sv.foes.map(([type,x,y,hp,band,sp]) => {
+    const st = ENEMY_TYPES[type] || ENEMY_TYPES.grunt;
+    const e = { type, ...st, hp, maxHp:st.hp, x, y, band, target:null, retargetIn:0,
+                speed: (sv.gm && sv.gm !== 'classic' && TD.eSpeed[type])
+                       ? TD.eSpeed[type]*ENEMY_SPD : st.speed*ENEMY_SPD,
+                slideDir: Math.random() < 0.5 ? 1 : -1, blockT: 0, slideT: 0 };
+    if (sp && typeof sp === 'object') {   // fable-mode named/role foe: restore identity & stats
+      e.eName = sp.n; if (sp.tr) e.trait = sp.tr;
+      e.elite = !!sp.el; e.warlord = !!sp.wl; e.champ = !!sp.ch;
+      e.maxHp = sp.mh || e.maxHp; e.dps = sp.dp || e.dps; e.speed = sp.sp || e.speed;
+      e.bounty = sp.bt || e.bounty; e.power = sp.pw || e.power; e.r = sp.r || e.r;
+      if (sp.co) e.color = sp.co; e.armored = !!sp.ar;
+      if (sp.g) { e.garrison = 1; e.cid = sp.cid; e.ax = sp.ax; e.ay = sp.ay; }
+      if (sp.av) { e.avenger = 1; e.avengerUntil = S.t + Math.max(1, sp.au || 10); }
+      e.chief = !!sp.cf; e.warchief = !!sp.wc;
+      if (sp.fch) { e.fcChaser = 1; e.trailD = sp.ftd || 0;
+        e.speed = FC.chaserSpd[e.type] || e.speed; }
+      if (sp.ffr) e.fcFree = 1;
+    }
+    return e;
   });
   S.bands = new Map(sv.bands.map(([id,mode,warned]) =>
     [id, { mode, nextEval:0, dest:null, officer:null, warnedRaid:!!warned }]));
@@ -1272,13 +1408,63 @@ function resumeGame(sv) {
     S.nextEventAt = S.t + Math.max(5, sv.td.evIn == null ? 120 : sv.td.evIn);
     S.spawnPauseUntil = S.t + Math.max(0, sv.td.pauseIn); S.surviveSecs = sv.td.survive;
     S.realT = sv.td.realT || 0; S.exNextAt = S.realT + Math.max(30, sv.td.exIn || 300);
-    S.knights = (sv.td.knights||[]).map(k => ({ ...mkKnight(k.x, k.y), hp:k.hp, mode:k.mode,
-      wps:k.wps||[], wpIdx:k.wpIdx||0, refuse:!!k.refuse }));
+    S.knights = (sv.td.knights||[]).map(k => { const kn = { ...mkKnight(k.x, k.y), hp:k.hp, mode:k.mode,
+      wps:k.wps||[], wpIdx:k.wpIdx||0, refuse:!!k.refuse };
+      if (k.nm) kn.name = k.nm; kn.kills = k.kl||0; kn.rank = k.rk||0; kn.campaigns = k.cp||0;
+      if (k.es != null) kn.escortIdx = k.es; return kn; });
+  }
+  if (S.gameMode === 'fablec') {
+    const f = sv.fc;
+    if (f) {
+      S.fc = { trail: f.tr.map(pt => ({ x:pt[0], y:pt[1], d:pt[2] })),
+        head:f.hd, pursuit:f.pu, road:f.rd, roadDone:f.rdd||0,
+        wagons: f.wg.map(w => ({ type:w.t, hp:w.hp, maxHp:FC.wagonHp[w.t], souls:w.s||0, dead:!!w.dd, x:0, y:0, a:0 })),
+        souls:f.so, soulsStart:f.ss||f.so, soulsGained:f.sg||0, morale:f.mo,
+        armed:!!f.ar, halted:!!f.ha, ringT:f.rt||0, breakT:0,
+        ringC: f.rc ? { x:f.rc[0], y:f.rc[1] } : null, waiting:false,
+        howlUntil:S.t+Math.max(0,f.hw||0), nextChaserAt:S.t+Math.max(3,f.nc||20),
+        huntAt:f.hu||FC.huntEvery, eventAt:S.t+Math.max(10,f.ev||60), oxUntil:S.t+Math.max(0,f.ox||0),
+        forage:(f.fo||[]).map(v=>({x:v[0],y:v[1],kind:v[2]})),
+        ambushes:(f.am||[]).map(v=>({x:v[0],y:v[1],n:v[2],wolfy:!!v[3],revealed:!!v[4]})),
+        springs:(f.sp||[]).map(v=>({x:v[0],y:v[1]})),
+        straggler: f.st ? { x:f.st[0], y:f.st[1], ttl:f.st[2], n:f.st[3] } : null, shrineAt:null,
+        lastGenPos:{ x:(f.lg||[0,0])[0], y:(f.lg||[0,0])[1] },
+        pins:f.pins||[], rescues:f.rs||0, renown:f.rn||0,
+        havenName:f.hn||'Aldervale', havenPos: f.hp2 ? { x:f.hp2[0], y:f.hp2[1] } : null,
+        mileQ:f.mq||1, contactT:0, lastBesetSay:0, waitToastAt:0, creep:f.cr!=null?f.cr:0.08 };
+    } else { S.surviveSecs = 1500; fcInit(); }
+  }
+  if (S.gameMode === 'fableb') {
+    const f = sv.fabb;
+    if (f) {
+      S.fabb = { camps: (f.camps||[]).map(c=>({ id:c.id, name:c.nm, x:c.x, y:c.y, tier:c.t,
+          revealed:!!c.rv, dead:!!c.dd, burn:c.br||0, leaderless:!!c.ll, rumorJit:c.rj||0,
+          garrisonUp:!!c.gu, nextSpawnAt:S.t+Math.max(1,c.ns||10), tierUpAt:S.t+Math.max(5,c.tuAt||120),
+          nextRaidAt:S.t+Math.max(5,c.nr||60), replenishAt:S.t+10 })),
+        citadel: f.cit ? { name:f.cit.nm, x:f.cit.x, y:f.cit.y, revealed:!!f.cit.rv,
+          dead:!!f.cit.dd, burn:f.cit.br||0, garrisonUp:!!f.cit.gu, replenishAt:S.t+10 } : null,
+        banners:f.ban||0, renown:f.rn||0, fervorT:f.fv||0, pips:f.pp||0,
+        lastDist:S.dist, lastRealT:S.realT, besetAt:S.t-(f.bs||120), startedOp:true,
+        war:f.war||1, front:f.front||0, tierUpSecs:f.tu||240 };
+    } else { S.surviveSecs = 1500; fabbInit(); }   // old save without fabb: fresh op
+  }
+  if (S.gameMode === 'fable') {
+    fabInit();
+    const f = sv.fab;
+    if (f) {
+      S.fab.nightNum = f.n||0; S.fab.nightMod = f.nm||null; S.fab.nightOn = !!f.no;
+      S.fab.nightAnnounced = !!f.na; S.fab.renown = f.rn||0;
+      S.fab.warlordAt = f.wa != null ? f.wa : S.fab.warlordAt; S.fab.warlordUp = !!f.wu;
+      S.fab.spawnCount = f.sc||0; S.fab.stride = f.st||0; S.fab.strideReady = !!f.sr;
+      S.fab.threatLog = f.tl||[];
+      for (const id of (f.rl||[])) fabApplyRelic(id, true);
+    }
   }
   applyModeUI();
   S.connDirty = true; S.lastFix = null;
   S.fieldClear = !S.enemies.length && !S.pendingSpawns.length;
   S.phase = 'playing';
+  initAudio();
   logEvent('▶️ Game resumed');
   requestWake();
   if (S.mode==='gps' && navigator.geolocation)
@@ -1296,20 +1482,24 @@ addEventListener('pagehide', saveGame);
 
 /* =================== PER-MODE UI =================== */
 function applyModeUI() {
-  const td = S.gameMode === 'td';
+  const td = TDL(), fc = FABC(), classic = !td && !fc;
   const show = (id, on) => { const el = $(id); if (el) el.style.display = on ? '' : 'none'; };
   // build bar
-  show('bDef', !td); show('bVet', !td); show('bKnight', !td);   // classic knight button (bar) hidden in td (side 🐴 + buy below)
-  show('bOff', !td); show('bCrew', !td); show('bSmith', !td);
-  show('bGuard', !td); show('bBallista', !td); show('bTower', !td);
-  show('bFort', true);                                          // wall button both modes (td = tiered walls)
+  show('bDef', classic); show('bVet', classic); show('bKnight', classic);
+  show('bOff', classic); show('bCrew', classic); show('bSmith', classic);
+  show('bGuard', classic); show('bBallista', classic); show('bTower', classic);
+  show('bFort', !fc);                                          // no walls on the road
+  show('bMine', !fc); show('bQuarry', !fc);
   show('bTDKnight', td);
+  show('bBrazier', FAB());
+  show('bHalt', fc); show('bMilitia', fc);
   // side buttons
-  show('btnKnight', td); show('btnOff', !td); show('btnLine', !td);
-  show('btnEx', td && CFG.strength !== 0);
+  show('btnKnight', td || fc); show('btnOff', classic); show('btnLine', classic);
+  show('btnEx', (td || fc) && CFG.strength !== 0);
 }
 const mkKnight = (x, y) => ({ x, y, hp:TD.knight.hp, maxHp:TD.knight.hp, mode:'follow',
-                              wps:[], wpIdx:0, refuse:false });
+                              wps:[], wpIdx:0, refuse:false,
+                              name: fabKnightName(), kills:0, rank:0 });
 
 /* =================== GAME START / END =================== */
 function startGame(mode, origin) {
@@ -1325,7 +1515,7 @@ function startGame(mode, origin) {
   applyModeUI();
   initMap([origin.lat, origin.lng]);
   genWorld();
-  if (S.gameMode === 'td') {
+  if (TDL()) {
     S.latentDir = (CFG.invasion==='directional' ? (CFG.invasionDir==null?90:CFG.invasionDir) * Math.PI/180
                                                 : Math.random()*Math.PI*2);
     S.vectors = [S.latentDir];
@@ -1334,6 +1524,11 @@ function startGame(mode, origin) {
     S.nextSpawnAt = 25;
     S.knights = [ mkKnight(10, 10) ];
     S.exNextAt = 300;
+    if (FAB()) fabInit();
+    if (FABB()) fabbInit();
+  } else if (FABC()) {
+    S.exNextAt = 300;
+    fcInit();
   } else {
     scheduleWave();
     if (CFG.startOfficer) {
@@ -1343,22 +1538,72 @@ function startGame(mode, origin) {
   }
   S.phase = 'playing';
   S.startedAt = performance.now();
+  initAudio();
   const diffName = document.querySelector('#diffRow .pill.sel')?.textContent || 'custom';
   logEvent('🏰 Game started — '+(mode==='gps'?'GPS':'Simulator')+', '+S.wavesToWin+' waves, '+diffName+
            (JSON.stringify(CFG)!==JSON.stringify({...DEFAULTS, ...DIFF_PRESETS[document.querySelector('#diffRow .pill.sel')?.dataset.diff||'soldier']}) ? ' (custom settings)' : ''));
   requestWake();
-  banner('🏰 Defend the Keep', 2200);
-  toast(S.gameMode==='td'
+  banner(FABC() ? '🐂 Lead them home' : '🏰 Defend the Keep', 2200);
+  toast(FABC()
+    ? 'The train follows YOUR trail — keep moving, forage as you go, and never let the red tide touch the wagons'
+    : TDL()
     ? 'Raiders will trickle in — send your 🐴 knight to claim ground, run out and wall the approach!'
     : 'First wave in ~'+Math.round(S.nextWaveAt/PACE)+'s — go capture 🌾 grain fields!', 'good');
   requestAnimationFrame(frame);
 }
 function endGame(won) {
+  sfx(won ? 'win' : 'lose');
   S.phase = won ? 'won' : 'over';
   logEvent(won ? '🏆 VICTORY — all waves survived, field swept' : '💀 The Keep has fallen');
   $('endTitle').textContent = won ? '🏆 Victory!' : '💀 The Keep has fallen';
-  $('endSub').textContent = S.gameMode==='td'
-    ? (won ? 'You held the Keep for '+fmtT(S.surviveSecs)+'.' : 'The Keep fell after '+fmtT(S.t)+'.')
+  if (FABC() && S.fc) {
+    const F = S.fc;
+    const wag = fcAliveWagons().length, wagT = F.wagons.length;
+    $('endTitle').textContent = won ? '🏡 ' + F.havenName + ' — DELIVERED'
+      : F.lostReason === 'morale' ? '💔 The people scatter into the dark'
+      : '💔 The last wagon has fallen';
+    try {
+      const L = fabLifetime();
+      L.renown = (L.renown||0) + F.renown + Math.round(F.souls / 4);
+      L.km = +((L.km||0) + S.dist/1000).toFixed(2);
+      L.kills = (L.kills||0) + S.kills;
+      localStorage.setItem('fdFable', JSON.stringify(L));
+      const band = S.knights.filter(k => k.hp > 0).map(k =>
+        ({ name: k.name, kills: k.kills || 0, rank: k.rank || 0, campaigns: k.campaigns || 0 }));
+      localStorage.setItem('fdWarband', JSON.stringify(band.slice(0, TD.knight.cap)));
+    } catch(e) {}
+    S.fcReport = { wag, wagT };
+    fabSay(won ? (F.souls + ' souls delivered to ' + F.havenName + '. The exodus is over.')
+               : 'The exodus has failed.');
+  }
+  if (FABB() && S.fabb) {
+    const rep = fabbSaveCampaign(won);
+    const burned = S.fabb.camps.filter(c=>c.dead).length + (S.fabb.citadel && S.fabb.citadel.dead ? 1 : 0);
+    const alive = S.knights.filter(k=>k.hp>0);
+    $('endTitle').textContent = won ? (rep.warWon ? '👑 THE WAR IS WON' : '🔥 Operation complete') : '💀 The Keep has fallen';
+    try {   // shared lifetime titles
+      const L = fabLifetime();
+      L.renown = (L.renown||0) + S.fabb.renown; L.km = +((L.km||0) + S.dist/1000).toFixed(2);
+      L.kills = (L.kills||0) + S.kills;
+      localStorage.setItem('fdFable', JSON.stringify(L));
+    } catch(e) {}
+    S.fabbReport = { rep, burned, alive: alive.map(k => FAB_RANKS[k.rank||0] + k.name + ' (' + (k.kills||0) + ')') };
+    fabSay(won ? (rep.warWon ? 'The war is won!' : 'The operation is complete. The front advances.') : 'The keep has fallen. The front gives ground.');
+  }
+  const inbound = TDL() && S.enemies.length
+    ? ' ' + S.enemies.length + ' raiders (\u2694 ' + Math.round(S.enemies.reduce((p,e)=>p+(e.power||1),0)) + ' power) are still in the field — keep fighting?'
+    : '';
+  $('endSub').textContent = (FABC() && S.fc)
+    ? (won ? S.fc.souls + ' souls walked into ' + S.fc.havenName + ' after ' + (S.fc.roadDone/1000).toFixed(1)
+             + ' km of road — you yourself ran ' + (S.dist/1000).toFixed(1) + ' km to lead them.'
+           : (S.fc.lostReason === 'morale' ? 'Hunger and fear broke the train after ' + (S.fc.roadDone/1000).toFixed(1) + ' km.'
+              : 'The wolves took the last of the people after ' + (S.fc.roadDone/1000).toFixed(1) + ' km.')
+             + ' The Warband that lives will ride again.')
+    : (FABB() && S.fabb)
+    ? (won ? 'The Citadel burns after '+fmtT(S.t)+'. The front advances'+(S.fabbReport && S.fabbReport.rep.warWon ? ' — the WAR is won; a harder one begins.' : '.')
+           : 'The Keep fell after '+fmtT(S.t)+'. The front gives ground — the Warband that lives will ride again.')
+    : TDL()
+    ? (won ? 'You held the Keep for '+fmtT(S.surviveSecs)+'.'+inbound : 'The Keep fell after '+fmtT(S.t)+'.')
     : (won ? 'You survived all '+S.wavesToWin+' waves and swept the field.' :
        'You fell during wave '+S.wavesLaunched+'.');
   const mins = (performance.now()-S.startedAt)/60000;
@@ -1366,10 +1611,85 @@ function endGame(won) {
     '<div>Distance run</div><b>'+(S.dist/1000).toFixed(2)+' km</b>' +
     '<div>Time</div><b>'+mins.toFixed(1)+' min</b>' +
     '<div>Enemies defeated</div><b>'+S.kills+'</b>' +
-    '<div>Avg pace</div><b>'+(S.dist>100 ? (mins/(S.dist/1000)).toFixed(1)+' min/km' : '–')+'</b>';
+    '<div>Avg pace</div><b>'+(S.dist>100 ? (mins/(S.dist/1000)).toFixed(1)+' min/km' : '–')+'</b>' +
+    ((FAB() && S.fab) ?
+      '<div>⚜️ Renown earned</div><b>'+Math.round(S.fab.renown)+'</b>' +
+      (S.fab.nightNum ? '<div>🌙 Nights survived</div><b>'+S.fab.nightNum+'</b>' : '') +
+      (S.fab.relics.length ? '<div>Relics carried</div><b>'+S.fab.relics.length+'</b>' : '') : '') +
+    ((FABC() && S.fc && S.fcReport) ?
+      '<div>👥 Souls delivered</div><b>'+S.fc.souls+' / '+(S.fc.soulsStart + (S.fc.soulsGained||0))+'</b>' +
+      '<div>🐂 Wagons through</div><b>'+S.fcReport.wag+' / '+S.fcReport.wagT+'</b>' +
+      '<div>👨‍👩‍👧 Families saved</div><b>'+S.fc.rescues+'</b>' +
+      '<div>💛 Morale at the gate</div><b>'+Math.round(S.fc.morale)+'</b>' +
+      '<div>🏁 The road</div><b>'+(S.fc.roadDone/1000).toFixed(1)+' km (you: '+(S.dist/1000).toFixed(1)+' km)</b>' : '') +
+    ((FABB() && S.fabb && S.fabbReport) ?
+      '<div>🚩 Banners taken</div><b>'+S.fabb.banners+'</b>' +
+      '<div>🏕️ Camps burned</div><b>'+S.fabbReport.burned+'</b>' +
+      '<div>⚜️ Renown</div><b>'+Math.round(S.fabb.renown)+'</b>' +
+      '<div>⚔️ Front</div><b>'+'█'.repeat(S.fabbReport.rep.led.front||0)+'▁'.repeat(5-(S.fabbReport.rep.led.front||0))+'</b>' +
+      '<div>🐴 Warband riding on</div><b>'+(S.fabbReport.alive.length ? S.fabbReport.alive.join('<br>') : 'none — raise new knights')+'</b>' : '');
+  if (FABC() && S.fc && S.fc.trail.length > 3) {
+    $('endStats').insertAdjacentHTML('afterend',
+      '<div style="margin:8px 0 2px;font-size:12px;color:#a8a29e">🗺️ The Journey Map — the road you led them down</div>' +
+      '<canvas id="fcMap" width="300" height="180" style="background:#f5efe0;border-radius:10px;border:1.5px solid #b45309"></canvas>');
+    setTimeout(() => {
+      const g = $('fcMap'); if (!g) return;
+      const c2 = g.getContext('2d'), T = S.fc.trail;
+      let x0=1e9, x1=-1e9, y0=1e9, y1=-1e9;
+      for (const p of T) { x0=Math.min(x0,p.x); x1=Math.max(x1,p.x); y0=Math.min(y0,p.y); y1=Math.max(y1,p.y); }
+      for (const pin of S.fc.pins) { x0=Math.min(x0,pin[1]); x1=Math.max(x1,pin[1]); y0=Math.min(y0,pin[2]); y1=Math.max(y1,pin[2]); }
+      const sc2 = Math.min(272/Math.max(60, x1-x0), 152/Math.max(60, y1-y0));
+      const mx = p => 14 + (p.x - x0) * sc2 + (272 - (x1-x0)*sc2)/2;
+      const my = p => 14 + (p.y - y0) * sc2 + (152 - (y1-y0)*sc2)/2;
+      c2.beginPath();
+      T.forEach((p, i) => { i ? c2.lineTo(mx(p), my(p)) : c2.moveTo(mx(p), my(p)); });
+      c2.strokeStyle = '#92400e'; c2.lineWidth = 2; c2.setLineDash([5,3]); c2.stroke(); c2.setLineDash([]);
+      const cols = { loss:'#dc2626', ambush:'#f97316', save:'#16a34a', camp:'#2563eb', shrine:'#a855f7' };
+      for (const [type, px2, py2] of S.fc.pins) {
+        c2.beginPath(); c2.arc(mx({x:px2}), my({y:py2}), 3.4, 0, Math.PI*2);
+        c2.fillStyle = cols[type] || '#57534e'; c2.fill();
+        c2.lineWidth = 1; c2.strokeStyle = '#fff'; c2.stroke();
+      }
+      const st2 = T[0], en2 = T[T.length-1];
+      c2.font = '11px sans-serif'; c2.textAlign = 'center';
+      c2.fillText('🏰', mx(st2), my(st2));
+      c2.fillText('🏡', mx(en2), my(en2));
+      c2.fillStyle = '#78716c'; c2.font = '8.5px sans-serif'; c2.textAlign = 'left';
+      c2.fillText('● lost  ● ambush  ● saved  ● camp  ● shrine', 8, 176);
+      let lx = 8;
+      for (const [t2, col] of [['lost','#dc2626'],['ambush','#f97316'],['saved','#16a34a'],['camp','#2563eb'],['shrine','#a855f7']]) {
+        c2.fillStyle = col; c2.fillRect(lx, 170, 5, 5); lx += 8 + c2.measureText(t2).width + 9;
+      }
+    }, 60);
+  }
+  if (FAB() && S.fab) {
+    fabSaveLifetime();
+    fabSay(won ? 'Victory. The fable is written.' : 'The keep has fallen. The fable ends.');
+    if (S.fab.threatLog.length > 3) {
+      const gid = 'fabGraph';
+      $('endStats').insertAdjacentHTML('afterend',
+        '<div style="margin:8px 0 2px;font-size:12px;color:#a8a29e">⚔ Threat at the walls, over the round</div>' +
+        '<canvas id="'+gid+'" width="290" height="56" style="background:#1c1917;border-radius:8px"></canvas>');
+      setTimeout(() => {
+        const g = $(gid); if (!g) return;
+        const c2 = g.getContext('2d'), L = S.fab.threatLog;
+        const mx = Math.max(1, ...L.map(v=>v[1])), t1 = L[L.length-1][0] || 1;
+        if (S.surviveSecs) {   // shade the finale window
+          c2.fillStyle = 'rgba(220,38,38,0.13)';
+          const x0 = 290 * clamp(S.surviveSecs*0.8/t1, 0, 1), x1 = 290 * clamp(S.surviveSecs/t1, 0, 1);
+          c2.fillRect(x0, 0, Math.max(2, x1-x0), 56);
+        }
+        c2.beginPath();
+        L.forEach((v,i) => { const x = 290*v[0]/t1, y = 52 - 46*v[1]/mx; i ? c2.lineTo(x,y) : c2.moveTo(x,y); });
+        c2.strokeStyle = '#f87171'; c2.lineWidth = 1.6; c2.stroke();
+        c2.fillStyle = '#a8a29e'; c2.font = '9px sans-serif';
+        c2.fillText('peak ⚔ ' + Math.round(mx), 6, 10);
+      }, 60);
+    }
+  }
   $('endLog').innerHTML = '<b style="font-size:13px">📜 Battle log</b><br>' +
     S.log.map(([t,m]) => '<div><span class="lt">'+fmtT(t)+'</span>'+m+'</div>').join('');
-  $('btnEndless').style.display = won ? 'block' : 'none';
+  $('btnEndless').style.display = (won && !FABB() && !FABC()) ? 'block' : 'none';
   $('endScreen').style.display = 'flex';
   clearSave();
   if (!won && S.gpsWatch != null) navigator.geolocation.clearWatch(S.gpsWatch);
@@ -1378,16 +1698,855 @@ $('btnEndless').onclick = () => {
   S.endless = true;
   $('endScreen').style.display = 'none';
   S.phase = 'playing';
-  if (S.gameMode !== 'td') {
+  if (!TDL()) {
     S.nextWaveAt = S.t + 45;
     scheduleWave();
   }
   logEvent('♾️ Endless mode begins');
   banner('♾️ Endless mode — how far can you go?', 3000);
+  if (FAB() && S.fab) { fabSay('The war goes on. Choose a relic.'); setTimeout(fabOpenDraft, 600); }
   lastT = null;
   requestAnimationFrame(frame);
 };
 
+
+/* =================== FABLEAUG ENGINE (mode 'fable' only — TD superset) =================== */
+const FAB_FIRST = ['Kor','Gar','Mor','Ur','Thra','Bal','Skar','Vor','Dur','Hex','Rug','Zan'];
+const FAB_LAST  = ['ga','mok','th','gul','ra','dok','n','grim','za','luk','tar','vek'];
+const FAB_KNIGHTS = ['Aldric','Bryn','Cedric','Rowan','Gareth','Edwin','Osric','Wystan','Alys','Maren','Idris','Tam','Corin','Elric','Sable','Wren'];
+const FAB_RANKS = ['', 'Banneret ', 'Champion '];
+const fabEnemyName = () => FAB_FIRST[Math.floor(Math.random()*FAB_FIRST.length)] + FAB_LAST[Math.floor(Math.random()*FAB_LAST.length)];
+let fabKN = 0;
+const fabKnightName = () => 'Ser ' + FAB_KNIGHTS[(fabKN++) % FAB_KNIGHTS.length];
+const FAB_TRAITS = { swift:'the Swift', stout:'the Stout', cruel:'the Cruel' };
+const FAB_NIGHTMODS = {
+  teeth:   { name:'The Night of Teeth',  desc:'wolf packs mass' },
+  iron:    { name:'The Night of Iron',   desc:'brutes walk' },
+  fire:    { name:'The Night of Fires',  desc:'strange fortunes abound' },
+  torches: { name:'The Night of Torches',desc:'the horde runs' },
+  quiet:   { name:'The Quiet Night',     desc:'few come — all of them somebody' },
+};
+const FAB_RELICS = [
+  { id:'oaken',    name:'🌳 Oaken Bulwark',    desc:'Walls shrug off 25% of all battering.' },
+  { id:'yew',      name:'🏹 Yew Longbows',     desc:'Wall archers: +20% damage, +6 m range.' },
+  { id:'gates',    name:'🚪 Spiked Gates',     desc:'The Keep garrison strikes twice as hard.' },
+  { id:'stirrups', name:'🐎 Swift Stirrups',   desc:'Knights ride 30% faster.' },
+  { id:'skin',     name:'🛡️ Stone Skin',       desc:'You take 20% less damage.' },
+  { id:'cellars',  name:'🏺 Deep Cellars',     desc:'All production +25%.' },
+  { id:'salve',    name:'🌿 Woundwort Salve',  desc:'You heal twice as fast.' },
+  { id:'dawnstar', name:'🌟 Dawnstar',         desc:'Nights are half as dark; wolves fear you.' },
+  { id:'toll',     name:'💰 Toll of Blades',   desc:'Double bounty on every kill.' },
+  { id:'warding',  name:'🗿 Warding Stones',   desc:'Sprint events come 30% more often.' },
+];
+function fabInit() {
+  S.fab = { nightNum:0, nightMod:null, nightOn:false, nightAnnounced:false,
+            stride:0, strideReady:false, strideUntil:0, lastDist:0, lastRealT:0,
+            relics:[], m:{ wallHp:1, wallDps:1, wallRange:0, keepDps:1, kSpd:1, pDef:1, prod:1, heal:1, bounty:1, evGap:1, dark:1 },
+            renown:0, warlordAt: Math.max(90, (S.surviveSecs||1500)*0.95 - 545), warlordUp:false,
+            spawnCount:0, threatLog:[], nextLogAt:0, flashUntil:0 };
+}
+function fabDark() {  // 0 = day … 1 = full night
+  if (!FAB() || !S.fab) return 0;
+  let d = 0;
+  if (!S.endless) {
+    const f = S.surviveSecs ? S.t / S.surviveSecs : 0;
+    d = f < 0.6 ? 0 : f < 0.72 ? (f - 0.6) / 0.12 : 1;
+  } else {
+    const pos = (S.t - (S.surviveSecs || 0)) % 360;
+    d = pos < 160 ? 0 : pos < 180 ? (pos - 160) / 20 : pos < 340 ? 1 : (360 - pos) / 20;
+  }
+  return d * S.fab.m.dark;
+}
+function fabNightTick() {
+  const F = S.fab;
+  /* round finale night announcement */
+  if (!S.endless && S.surviveSecs && S.t / S.surviveSecs >= 0.66 && !F.nightAnnounced) {
+    F.nightAnnounced = true;
+    banner('🌆 Dusk — night is falling', 3000);
+    fabSay('Dusk falls. Hold through the night.');
+  }
+  /* endless: named nights + dawns */
+  if (S.endless) {
+    const pos = (S.t - (S.surviveSecs || 0)) % 360;
+    const night = pos >= 170;
+    if (night && !F.nightOn) {
+      F.nightOn = true; F.nightNum++;
+      const keys = Object.keys(FAB_NIGHTMODS);
+      F.nightMod = keys[Math.floor(Math.random()*keys.length)];
+      const nm = FAB_NIGHTMODS[F.nightMod];
+      banner('🌙 Night ' + F.nightNum + ' — ' + nm.name, 4000);
+      toast('🌙 ' + nm.name + ': ' + nm.desc, 'bad');
+      logEvent('🌙 Night ' + F.nightNum + ' begins — ' + nm.name);
+      fabSay('Night ' + F.nightNum + '. ' + nm.name + '.');
+      sfx('front');
+      fabSpawnWarlord();
+    } else if (!night && F.nightOn) {
+      F.nightOn = false; F.nightMod = null;
+      F.renown += 5;
+      banner('🌅 Dawn — Night ' + F.nightNum + ' survived', 3500);
+      logEvent('🌅 Dawn breaks — night ' + F.nightNum + ' survived (+5 renown)');
+      fabSay('Dawn breaks. The night is survived.');
+      sfx('win');
+      fabOpenDraft();
+    }
+  }
+  /* the Warlord of the round */
+  if (!S.endless && !F.warlordUp && S.t >= F.warlordAt) fabSpawnWarlord();
+}
+function fabSpawnWarlord() {
+  const F = S.fab; F.warlordUp = true;
+  const a = S.vectors[0] ?? S.latentDir;
+  const nm = 'Warlord ' + fabEnemyName();
+  S.enemies.push({ type:'brute', hp:1200, maxHp:1200, dps:40, armored:true, r:11,
+                   color:'#450a0a', bounty:25, power:10, warlord:true, eName:nm,
+                   speed: 1.1 * ENEMY_SPD,
+                   x: Math.cos(a)*ARENA_R, y: Math.sin(a)*ARENA_R,
+                   band:null, target:null, retargetIn:0, slideDir:1, blockT:0, slideT:0 });
+  banner('⚔️ ' + nm.toUpperCase() + ' HAS TAKEN THE FIELD', 4500);
+  toast('⚔️ ' + nm + ' marches on the Keep — his warhorn drives the horde', 'bad');
+  logEvent('⚔️ ' + nm + ' has taken the field');
+  fabSay('The Warlord has taken the field.');
+  sfx('rout');
+}
+function fabWarlordSlain(dead) {
+  const F = S.fab;
+  F.renown += 10; if (!S.endless) F.warlordUp = true;
+  S.supply += 30; S.iron += 15; S.stone += 15;
+  const n = S.enemies.length;
+  S.enemies.length = 0;
+  S.spawnPauseUntil = Math.max(S.spawnPauseUntil, S.t + 45);
+  banner('🏆 ' + (dead.eName||'The Warlord').toUpperCase() + ' IS SLAIN — THE HORDE ROUTS!', 4500);
+  toast('🏆 ' + (dead.eName||'The Warlord') + ' falls — ' + n + ' raiders flee! (+30🌾 +15⚙️ +15🧱, +10 renown)', 'good');
+  logEvent('🏆 ' + (dead.eName||'The Warlord') + ' slain — the horde routed (' + n + ' fled)');
+  fabSay('The Warlord is slain! The horde is routed!');
+  sfx('warcry');
+}
+const FAB_SPOKEN = { N:'north', NE:'north east', E:'east', SE:'south east', S:'south', SW:'south west', W:'west', NW:'north west' };
+const fabSpoken = a => FAB_SPOKEN[compass(a)] || compass(a);
+let fabLastSay = 0;
+function fabSay(text) {
+  if (!(FAB() || FABB() || FABC()) || CFG.alerts === 0) return;
+  try {
+    if (!window.speechSynthesis) return;
+    const now = performance.now();
+    if (now - fabLastSay < 4000) return;
+    fabLastSay = now;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.02; u.pitch = 0.85; u.volume = 0.9;
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+function fabApplyRelic(id, silent) {
+  const F = S.fab, m = F.m;
+  if (!silent) F.relics.push(id);
+  else if (!F.relics.includes(id)) F.relics.push(id);
+  if (id==='oaken') m.wallHp *= 1.3333;
+  else if (id==='yew') { m.wallDps *= 1.2; m.wallRange += 6; }
+  else if (id==='gates') m.keepDps *= 2;
+  else if (id==='stirrups') m.kSpd *= 1.3;
+  else if (id==='skin') m.pDef *= 0.8;
+  else if (id==='cellars') m.prod *= 1.25;
+  else if (id==='salve') m.heal *= 2;
+  else if (id==='dawnstar') { m.dark *= 0.5; F.wolfFear = true; }
+  else if (id==='toll') m.bounty *= 2;
+  else if (id==='warding') m.evGap *= 0.7;
+  const r = FAB_RELICS.find(r => r.id === id);
+  if (!silent) logEvent('⚜️ Relic taken: ' + (r ? r.name : id));
+}
+function fabOpenDraft() {
+  if (!FAB()) return;
+  const owned = S.fab.relics;
+  let pool = FAB_RELICS.filter(r => !owned.includes(r.id));
+  if (pool.length < 3) pool = FAB_RELICS.slice();
+  const picks = [];
+  while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+  document.querySelector('#fabDraft h1').textContent = '🌅 Dawn — choose a relic';
+  $('fabDraftSub').textContent = 'The night is survived. The fable grows.';
+  $('fabDraftCards').innerHTML = picks.map(r =>
+    '<div class="relicCard" data-relic="' + r.id + '"><b>' + r.name + '</b><small>' + r.desc + '</small></div>').join('');
+  S.draftOpen = true;
+  $('fabDraft').style.display = 'flex';
+}
+$('fabDraft').addEventListener('click', e => {
+  const c = e.target.closest('.relicCard'); if (!c) return;
+  if (c.dataset.fcshrine) { fcShrineChoice(c.dataset.fcshrine); return; }
+  fabApplyRelic(c.dataset.relic);
+  S.draftOpen = false;
+  $('fabDraft').style.display = 'none';
+  toast('⚜️ ' + (FAB_RELICS.find(r => r.id===c.dataset.relic)||{}).name + ' — taken', 'good');
+});
+function fabThreatBins() {  // 12 bearing bins around the keep, power-weighted
+  const bins = new Array(12).fill(0);
+  for (const e of S.enemies) {
+    const a = Math.atan2(e.y, e.x);
+    bins[((Math.round(a / (Math.PI/6)) % 12) + 12) % 12] += (e.power || 1);
+  }
+  return bins;
+}
+function fabLifetime() {
+  try { return JSON.parse(localStorage.getItem('fdFable') || '{}'); } catch(e) { return {}; }
+}
+function fabTitle(rn) {
+  return rn >= 500 ? 'Legend' : rn >= 300 ? 'Marshal' : rn >= 160 ? 'Warden' :
+         rn >= 80 ? 'Banneret' : rn >= 30 ? 'Knight-Errant' : 'Squire';
+}
+function fabSaveLifetime() {
+  if (!FAB() || !S.fab) return;
+  try {
+    const L = fabLifetime();
+    L.renown = (L.renown || 0) + S.fab.renown;
+    L.km = +((L.km || 0) + S.dist/1000).toFixed(2);
+    L.kills = (L.kills || 0) + S.kills;
+    L.nights = Math.max(L.nights || 0, S.fab.nightNum);
+    localStorage.setItem('fdFable', JSON.stringify(L));
+  } catch(e) {}
+}
+function fabMenuMeta() {
+  const L = fabLifetime();
+  const camp = (typeof fabbMenuMeta === 'function') ? fabbMenuMeta() : '';
+  if (!L.renown && !L.km && !camp) return;
+  $('fabMeta').style.display = 'block';
+  const line1 = (L.renown || L.km) ? '⚜️ ' + fabTitle(L.renown||0) + ' · ' + (L.renown||0) + ' renown · ' +
+    (L.km||0) + ' km lifetime' + (L.nights ? ' · deepest night: ' + L.nights : '') : '';
+  $('fabMeta').innerHTML = line1 + (line1 && camp ? '<br>' : '') + camp;
+}
+
+
+/* =================== FABLEAUGC "EXODUS" ENGINE (mode 'fablec' only) =================== */
+const FC = {
+  trainSpd: 1.9, spacing: 15, contactDps: 6,
+  wagonHp: { people: 300, granary: 260, forge: 260, shrine: 240 },
+  chaserSpd: { wolf: 2.9, grunt: 2.1 }, huntEvery: 700,
+  ringR: 22, ringForm: 8,
+};
+const FC_HAVENS = ['Aldervale','Elmhollow','Brightwater','Thornfree Vale','Lark Meadow','Stillbrook'];
+function fcInit() {
+  const mins = S.surviveSecs ? S.surviveSecs / 60 : 25;
+  const road = mins <= 15 ? 1600 : mins <= 25 ? 2800 : 4500;
+  S.surviveSecs = 0;
+  /* the road is wilderness: no farms, no keep — strip the settled world */
+  for (const c of S.cells.values()) { c.feature = null; if (c.structure) c.structure = null; }
+  const wagons = [];
+  const types = mins <= 15 ? ['people','granary','forge','shrine']
+              : mins <= 25 ? ['people','granary','people','forge','shrine']
+              : ['people','granary','people','forge','people','shrine'];
+  for (const t of types) wagons.push({ type: t, hp: FC.wagonHp[t], maxHp: FC.wagonHp[t],
+    souls: t === 'people' ? 20 : 0, dead: false, x: 0, y: 0, a: 0 });
+  /* seed trail: the road already walked, straight in from the west */
+  const trail = [];
+  for (let d = 0; d <= 400; d += 8) trail.push({ x: d - 400, y: 0, d });
+  S.fc = { trail, head: 400, pursuit: 90, road, roadDone: 0,
+    wagons, souls: wagons.reduce((a,w)=>a+w.souls,0), soulsStart: 0,
+    morale: 85, armed: false, halted: false, ringT: 0, breakT: 0, ringC: null, waiting: false,
+    howlUntil: 0, nextChaserAt: S.t + 25, huntAt: FC.huntEvery, eventAt: S.t + 100 + Math.random()*50,
+    forage: [], ambushes: [], springs: [], straggler: null, shrineAt: null, oxUntil: 0,
+    lastGenPos: { x: 0, y: 0 }, pins: [], rescues: 0, renown: 0,
+    havenName: FC_HAVENS[Math.floor(Math.random()*FC_HAVENS.length)], havenPos: null,
+    mileQ: 1, contactT: 0, lastBesetSay: 0, waitToastAt: 0,
+    creep: 0.04 + 0.04 * (CFG.waveSize || 1) };
+  S.fc.soulsStart = S.fc.souls;
+  /* the Warband guards the exodus (persistent veterans from Warpath, read + written) */
+  const band = (typeof fabbWarband === 'function') ? fabbWarband().slice(0, TD.knight.cap) : [];
+  if (band.length) {
+    S.knights = band.map((b, i) => { const k = mkKnight(-20 - i*8, 6);
+      k.name = b.name; k.kills = b.kills || 0; k.rank = b.rank || 0; k.campaigns = (b.campaigns || 0) + 1;
+      return k; });
+    toast('🐴 The Warband guards the exodus: ' + band.map(b => b.name).join(', '), 'good');
+    logEvent('🐴 Warband on escort — ' + band.map(b => FAB_RANKS[b.rank||0] + b.name).join(' · '));
+  }
+  logEvent('🐂 The Exodus begins — ' + S.fc.souls + ' souls, ' + (road/1000).toFixed(1) + ' km to ' + S.fc.havenName);
+  banner('🐂 LEAD THEM TO ' + S.fc.havenName.toUpperCase(), 4000);
+  fabSay('The exodus begins. ' + S.fc.souls + ' souls follow you. Lead them home.');
+}
+function fcTrailAt(d) {
+  const T = S.fc.trail;
+  if (!T.length) return { x: 0, y: 0 };
+  if (d <= T[0].d) return { x: T[0].x, y: T[0].y };
+  if (d >= T[T.length-1].d) return { x: T[T.length-1].x, y: T[T.length-1].y };
+  let lo = 0, hi = T.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; (T[m].d <= d) ? lo = m : hi = m; }
+  const a = T[lo], b = T[hi], f = (d - a.d) / Math.max(0.001, b.d - a.d);
+  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+}
+function fcAliveWagons() { return S.fc.wagons.filter(w => !w.dead); }
+function fcHas(type) { return S.fc.wagons.some(w => !w.dead && w.type === type); }
+function fcTailD() {
+  const F = S.fc;
+  return F.head - (fcAliveWagons().length - 1) * FC.spacing;
+}
+function fcPin(type, x, y) { const F = S.fc; F.pins.push([type, Math.round(x), Math.round(y)]); if (F.pins.length > 80) F.pins.shift(); }
+function fcWagonLost(w) {
+  const F = S.fc;
+  w.dead = true;
+  fcPin('loss', w.x, w.y);
+  sfx('breach');
+  if (w.type === 'people') {
+    F.souls -= w.souls; F.morale = Math.max(0, F.morale - 15);
+    banner('💔 A WAGON OF SOULS IS LOST', 4000);
+    logEvent('💔 A people-wagon destroyed — ' + w.souls + ' souls lost (' + F.souls + ' remain)');
+    fabSay('A wagon is lost. ' + F.souls + ' souls remain.');
+  } else {
+    F.morale = Math.max(0, F.morale - 10);
+    const nm = w.type === 'granary' ? 'Granary — hunger will bite twice as hard'
+             : w.type === 'forge' ? 'Forge — no more repairs on the move'
+             : 'Shrine — the songs go quiet';
+    banner('💥 THE ' + w.type.toUpperCase() + ' WAGON IS LOST', 3500);
+    logEvent('💥 The ' + nm);
+    fabSay('The ' + w.type + ' wagon is lost.');
+  }
+  if (!fcHas('people')) { S.fc.lostReason = 'souls'; endGame(false); }
+}
+function fcHaltToggle() {
+  const F = S.fc; if (!F) return;
+  if (!F.halted) {
+    F.halted = true; F.ringT = 0; F.waiting = false;
+    F.ringC = fcTrailAt(F.head);
+    sfx('front');
+    banner('⛺ CIRCLE UP — the wagons form the ring', 3000);
+    logEvent('⛺ Halted — wagons circling (' + Math.round(fcTailD() - F.pursuit) + ' m of road banked)');
+    fabSay('Circle the wagons.');
+    fcPin('camp', F.ringC.x, F.ringC.y);
+  } else {
+    F.halted = false; F.breakT = FC.ringForm;
+    banner('🐂 BREAK CAMP — the road goes on', 2500);
+    logEvent('🐂 Camp broken — the train moves out');
+    fabSay('Break camp. Move out.');
+  }
+}
+function fcSpawn(type, x, y, extra) {
+  const st = ENEMY_TYPES[type] || ENEMY_TYPES.grunt;
+  const e = { type, ...st, hp: st.hp, maxHp: st.hp, x, y,
+    speed: FC.chaserSpd[type] || st.speed, band: null, target: null, retargetIn: 0,
+    slideDir: 1, blockT: 0, slideT: 0, ...extra };
+  S.enemies.push(e); return e;
+}
+function fcGen() {
+  const F = S.fc;
+  const dx = S.player.x - F.lastGenPos.x, dy = S.player.y - F.lastGenPos.y;
+  const dd = Math.hypot(dx, dy);
+  if (dd < 220) return;
+  const hx = dd > 1 ? dx/dd : 1, hy = dd > 1 ? dy/dd : 0;
+  F.lastGenPos = { x: S.player.x, y: S.player.y };
+  const cx = S.player.x + hx*260, cy = S.player.y + hy*260;
+  const jit = r => (Math.random()-0.5) * 2 * r;
+  const nF = 1 + (Math.random() < 0.45 ? 1 : 0);
+  for (let i = 0; i < nF; i++) {
+    const kind = ['grain','grain','herbs','timber'][Math.floor(Math.random()*4)];
+    F.forage.push({ x: cx + jit(150), y: cy + jit(150), kind });
+  }
+  const r = Math.random();
+  const nA = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
+  for (let i = 0; i < nA; i++)
+    F.ambushes.push({ x: cx + jit(170), y: cy + jit(170),
+      n: 3 + Math.floor(Math.random()*3), wolfy: Math.random() < 0.55, revealed: false });
+  if (Math.random() < 0.25) F.springs.push({ x: cx + jit(140), y: cy + jit(140) });
+  const prune = arr => { for (let i = arr.length-1; i >= 0; i--)
+    if (Math.hypot(arr[i].x - S.player.x, arr[i].y - S.player.y) > 950) arr.splice(i, 1); };
+  prune(F.forage); prune(F.ambushes); prune(F.springs);
+}
+function fcShrineChoice(id) {
+  const F = S.fc;
+  if (id === 'ox') { F.oxUntil = S.t + 240;
+    toast('🐂 Oxen\'s Second Wind — the train pulls +12% for 4 min', 'good');
+    logEvent('⛪ Blessing taken: Oxen\'s Second Wind'); }
+  else { F.morale = Math.min(100, F.morale + 15);
+    toast('💛 Stout Hearts — +15 morale', 'good');
+    logEvent('⛪ Blessing taken: Stout Hearts'); }
+  S.draftOpen = false; $('fabDraft').style.display = 'none';
+}
+function fcOpenShrine() {
+  $('fabDraftCards').innerHTML =
+    '<div class="relicCard" data-fcshrine="ox"><b>🐂 Oxen\'s Second Wind</b><small>The train pulls 12% faster for 4 minutes.</small></div>' +
+    '<div class="relicCard" data-fcshrine="hearts"><b>💛 Stout Hearts</b><small>+15 morale, at once.</small></div>';
+  document.querySelector('#fabDraft h1').textContent = '⛪ A wayside shrine';
+  $('fabDraftSub').textContent = 'The people pause and pray. Choose the blessing.';
+  S.draftOpen = true;
+  $('fabDraft').style.display = 'flex';
+}
+function fcTick(dt) {
+  const F = S.fc; if (!F) return;
+  const alive = fcAliveWagons();
+  /* ---- record the trail the people will follow ---- */
+  const T = F.trail, lp = T[T.length-1];
+  const seg = Math.hypot(S.player.x - lp.x, S.player.y - lp.y);
+  if (seg >= 4 && seg <= 250) T.push({ x: S.player.x, y: S.player.y, d: lp.d + seg });
+  while (T.length > 2 && T[1].d < F.pursuit - 80) T.shift();
+  /* ---- the train advances along it ---- */
+  const trailLen = T[T.length-1].d;
+  let spdM = F.morale > 70 ? 1.05 : F.morale < 30 ? 0.85 : 1;
+  if (S.t < F.oxUntil) spdM *= 1.12;
+  if (!F.halted && F.breakT <= 0) {
+    const was = F.head;
+    F.head = Math.min(F.head + FC.trainSpd * spdM * dt, trailLen);
+    F.roadDone = Math.max(F.roadDone, F.head - 400);
+    F.waiting = F.head >= trailLen - 0.5;
+    if (F.waiting && S.t > F.waitToastAt && F.pursuit > 0) {
+      F.waitToastAt = S.t + 25;
+      toast('🐂 The train waits for your lead — walk on!', 'bad');
+    }
+  } else if (F.breakT > 0) F.breakT -= dt;
+  if (F.halted) F.ringT = Math.min(FC.ringForm, F.ringT + dt);
+  else if (F.ringT > 0) F.ringT = Math.max(0, F.ringT - dt * 1.5);
+  /* wagon positions: the file, or the ring */
+  const ringF = F.ringT / FC.ringForm;
+  let ai = 0;
+  for (const w of F.wagons) {
+    if (w.dead) continue;
+    const fp = fcTrailAt(F.head - ai * FC.spacing);
+    if (ringF > 0.01 && F.ringC) {
+      const a = (ai / Math.max(1, alive.length)) * Math.PI * 2;
+      const rp = { x: F.ringC.x + Math.cos(a) * FC.ringR, y: F.ringC.y + Math.sin(a) * FC.ringR };
+      w.x = fp.x + (rp.x - fp.x) * ringF; w.y = fp.y + (rp.y - fp.y) * ringF;
+    } else { w.x = fp.x; w.y = fp.y; }
+    const nx = fcTrailAt(F.head - ai * FC.spacing + 6);
+    w.a = Math.atan2(nx.y - w.y, nx.x - w.x);
+    ai++;
+  }
+  /* ---- the Pursuit ---- */
+  const howl = S.t < F.howlUntil;
+  /* the tide paces the train itself (morale bonus included) plus the creep —
+     no state of grace outruns it; only finishing the road does */
+  const purSpd = FC.trainSpd * spdM + F.creep + (howl ? 0.6 : 0);
+  F.pursuit = Math.min(F.pursuit + purSpd * dt, fcTailD());
+  const buffer = fcTailD() - F.pursuit;
+  const contact = buffer < 6;
+  if (contact) {
+    F.contactT += dt;
+    const rear = alive[alive.length - 1];
+    if (rear) { rear.hp -= FC.contactDps * dt; if (rear.hp <= 0) fcWagonLost(rear); }
+    if (F.contactT > 8) { F.contactT = 0;
+      const pp = fcTrailAt(F.pursuit);
+      fcSpawn('wolf', pp.x, pp.y, { fcFree: 1 });
+      sfx('keep');
+      toast('🐺 They are AT THE WAGONS — drive them off!', 'bad');
+    }
+  } else F.contactT = 0;
+  if (contact && S.t - F.lastBesetSay > 45) { F.lastBesetSay = S.t;
+    banner('🐺 THE TIDE HAS CAUGHT THE TRAIN', 3500);
+    logEvent('🐺 The pursuit made contact with the rear wagon');
+    fabSay('They are at the wagons!'); }
+  /* ---- chasers track the trail ---- */
+  if (S.t >= F.nextChaserAt && S.t >= S.spawnPauseUntil) {
+    F.nextChaserAt = S.t + 22 + Math.random() * 13;
+    const type = Math.random() < 0.55 ? 'wolf' : 'grunt';
+    const pp = fcTrailAt(F.pursuit);
+    fcSpawn(type, pp.x + (Math.random()-.5)*20, pp.y + (Math.random()-.5)*20,
+      { fcChaser: 1, trailD: F.pursuit });
+  }
+  /* ---- hunting parties converge ahead ---- */
+  if (F.head >= F.huntAt) {
+    F.huntAt += FC.huntEvery;
+    const hp0 = fcTrailAt(Math.min(trailLen, F.head + 100));
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const hx = hp0.x + side * 180, hy = hp0.y + (Math.random()-.5) * 220;
+    fcSpawn('brute', hx, hy, { fcFree: 1, speed: 1.6 });
+    fcSpawn('grunt', hx + 14, hy, { fcFree: 1 });
+    fcSpawn('grunt', hx - 14, hy, { fcFree: 1 });
+    sfx('front');
+    banner('⚠️ HUNTING PARTY — ' + compass(Math.atan2(hy - S.player.y, hx - S.player.x)) + '!', 3500);
+    logEvent('⚠️ A hunting party closes on the train');
+    fabSay('A hunting party, ' + fabSpoken(Math.atan2(hy - S.player.y, hx - S.player.x)) + '. Intercept them.');
+  }
+  /* ---- the country ahead ---- */
+  fcGen();
+  for (let i = F.forage.length - 1; i >= 0; i--) {
+    const f = F.forage[i];
+    if (Math.hypot(f.x - S.player.x, f.y - S.player.y) < 20) {
+      if (f.kind === 'grain') { S.supply += 30; toast('🌾 Foraged grain (+30)', 'good'); }
+      else if (f.kind === 'herbs') { for (const w of alive) w.hp = Math.min(w.maxHp, w.hp + w.maxHp*0.10);
+        toast('🌿 Healing herbs — every wagon mended 10%', 'good'); }
+      else { let weak = null; for (const w of alive) if (!weak || w.hp/w.maxHp < weak.hp/weak.maxHp) weak = w;
+        if (weak) weak.hp = Math.min(weak.maxHp, weak.hp + 60);
+        toast('🪵 Timber — the weakest wagon patched (+60)', 'good'); }
+      sfx('claim');
+      F.forage.splice(i, 1);
+    }
+  }
+  for (let i = F.ambushes.length - 1; i >= 0; i--) {
+    const a = F.ambushes[i];
+    const dp = Math.hypot(a.x - S.player.x, a.y - S.player.y);
+    if (!a.revealed && dp < 140) { a.revealed = true;
+      toast('⚠️ ' + (a.wolfy ? 'Wolf-sign' : 'Raider-sign') + ' ahead — a pack lies in wait', 'bad');
+      logEvent('⚠️ Ambush scouted (' + a.n + ' ' + (a.wolfy ? 'wolves' : 'raiders') + ')');
+      fabSay(a.wolfy ? 'Wolf sign ahead.' : 'Raiders lie in wait ahead.'); }
+    const nearWagon = alive.some(w => Math.hypot(a.x - w.x, a.y - w.y) < 70);
+    if (dp < 40 || nearWagon) {
+      for (let k = 0; k < a.n; k++)
+        fcSpawn(a.wolfy ? 'wolf' : 'grunt', a.x + (Math.random()-.5)*30, a.y + (Math.random()-.5)*30, { fcFree: 1 });
+      sfx('rout');
+      banner('🐺 AMBUSH!', 2500);
+      logEvent('🐺 Ambush sprung — ' + a.n + ' attackers');
+      fcPin('ambush', a.x, a.y);
+      F.ambushes.splice(i, 1);
+    }
+  }
+  for (const sp of F.springs) {
+    let touched = false;
+    for (const w of alive) if (Math.hypot(sp.x - w.x, sp.y - w.y) < 60) {
+      w.hp = Math.min(w.maxHp, w.hp + (fcHas('shrine') ? 4 : 2) * dt); touched = true; }
+    if (touched) F.morale = Math.min(100, F.morale + 0.5 * dt);
+  }
+  /* ---- militia + repairs ---- */
+  if (F.armed) {
+    S.supply -= 0.25 * dt;
+    if (S.supply <= 0) { S.supply = 0; F.armed = false; toast('🗡️ The militia stands down — no grain to feed them', 'bad'); }
+    else {
+      const mDps = 8 * (fcHas('forge') ? 1.5 : 1);
+      for (const w of alive) {
+        let tgt = null, td_ = 1e12;
+        for (const e of S.enemies) { const dd = (e.x-w.x)**2 + (e.y-w.y)**2; if (dd < td_) { td_ = dd; tgt = e; } }
+        if (tgt && td_ < 18*18) tgt.hp -= mDps * dt;
+      }
+    }
+  }
+  for (const w of alive) if (w.hp < w.maxHp && Math.hypot(w.x - S.player.x, w.y - S.player.y) < 25) {
+    const rate = (F.halted && F.ringT > 6) ? 6 : (fcHas('forge') ? 2 : 0);
+    w.hp = Math.min(w.maxHp, w.hp + rate * dt);
+  }
+  /* ---- hunger & morale ---- */
+  const pplWagons = alive.filter(w => w.type === 'people').length;
+  const drain = pplWagons * (fcHas('granary') ? 0.6 : 1.2) / 60;
+  S.supply = Math.max(0, S.supply - drain * dt);
+  let dM = 0;
+  if (S.supply <= 0) dM -= 3 / 60;
+  else dM += 0.2 / 60;
+  if (alive.some(w => Math.hypot(w.x - S.player.x, w.y - S.player.y) < 40)) dM += 1.5 / 60;
+  if (fcHas('shrine')) dM += 0.6 / 60;
+  if (buffer < 120) dM -= 1.5 / 60;
+  if (contact) dM -= 2 / 60;
+  if (howl) dM -= 1 / 60;
+  if (F.waiting && !F.halted) dM -= 1 / 60;
+  F.morale = clamp(F.morale + dM * dt, 0, 100);
+  if (F.morale <= 0) { F.lostReason = 'morale'; endGame(false); return; }
+  /* ---- milestones ---- */
+  const q = F.road / 4;
+  if (F.roadDone >= q * F.mileQ && F.mileQ <= 3) {
+    F.morale = Math.min(100, F.morale + 8); F.mileQ++;
+    sfx('win');
+    banner('🏁 ' + (F.roadDone/1000).toFixed(1) + ' KM BEHIND THEM — THE PEOPLE TAKE HEART', 3500);
+    logEvent('🏁 Milestone: ' + (F.roadDone/1000).toFixed(1) + ' km — morale rises');
+    fabSay((F.roadDone/1000).toFixed(1) + ' kilometers. The people take heart.');
+  }
+  /* ---- events of the road ---- */
+  if (S.t >= F.eventAt && !S.draftOpen) {
+    F.eventAt = S.t + 140 + Math.random() * 40;
+    const r = Math.random();
+    if (r < 0.45 && !F.straggler) {
+      const a = Math.random() * Math.PI * 2, rr = 150 + Math.random() * 70;
+      F.straggler = { x: S.player.x + Math.cos(a)*rr, y: S.player.y + Math.sin(a)*rr,
+        ttl: 100, n: 3 + Math.floor(Math.random() * 4) };
+      sfx('event');
+      banner('👨‍👩‍👧 STRAGGLERS — ' + fmtT(100), 3500);
+      toast('👨‍👩‍👧 A family of ' + F.straggler.n + ' hides ' + Math.round(rr) + ' m to the ' +
+        compass(a) + ' — reach them before the wolves do!', 'bad');
+      logEvent('👨‍👩‍👧 Stragglers sighted (' + F.straggler.n + ' souls)');
+      fabSay('Stragglers! A family hides ' + fabSpoken(a) + '. Run.');
+    } else if (r < 0.75) {
+      const hp2 = fcTrailAt(Math.min(trailLen, F.head + 60));
+      F.shrineAt = { x: hp2.x + (Math.random()-.5)*160, y: hp2.y + (Math.random()-.5)*160, ttl: 120 };
+      sfx('event');
+      toast('⛪ A wayside shrine stands ' + Math.round(Math.hypot(F.shrineAt.x-S.player.x, F.shrineAt.y-S.player.y)) + ' m off — touch it for a blessing', 'good');
+      logEvent('⛪ Wayside shrine sighted');
+    } else {
+      F.howlUntil = S.t + 45;
+      sfx('rout');
+      banner('🐺 THE HORDE HOWLS — THEY SMELL THE TRAIL', 4000);
+      logEvent('🐺 The Howl — pursuit surges for 45 s');
+      fabSay('They howl. They are coming faster. Push!');
+    }
+  }
+  if (F.straggler) {
+    F.straggler.ttl -= dt;
+    if (Math.hypot(F.straggler.x - S.player.x, F.straggler.y - S.player.y) < 25) {
+      F.souls += F.straggler.n; F.rescues++; F.renown += 2; F.soulsGained = (F.soulsGained||0) + F.straggler.n;
+      F.morale = Math.min(100, F.morale + 6);
+      const pw = alive.find(w => w.type === 'people'); if (pw) pw.souls += F.straggler.n;
+      sfx('claim');
+      banner('👨‍👩‍👧 ' + F.straggler.n + ' SOULS SAVED — THEY RUN BESIDE YOU', 3500);
+      logEvent('👨‍👩‍👧 ' + F.straggler.n + ' stragglers saved (' + F.souls + ' souls now follow)');
+      fabSay(F.straggler.n + ' souls saved. They run beside you.');
+      fcPin('save', F.straggler.x, F.straggler.y);
+      F.straggler = null;
+    } else if (F.straggler.ttl <= 0) {
+      F.morale = Math.max(0, F.morale - 5);
+      toast('🕯 The stragglers were not reached in time…', 'bad');
+      logEvent('🕯 The stragglers were lost to the dark');
+      F.straggler = null;
+    }
+  }
+  if (F.shrineAt) {
+    F.shrineAt.ttl -= dt;
+    if (Math.hypot(F.shrineAt.x - S.player.x, F.shrineAt.y - S.player.y) < 22) {
+      fcPin('shrine', F.shrineAt.x, F.shrineAt.y);
+      F.shrineAt = null; fcOpenShrine();
+    } else if (F.shrineAt.ttl <= 0) F.shrineAt = null;
+  }
+  /* ---- the Haven ---- */
+  if (!F.havenPos && F.roadDone / F.road > 0.9) {
+    const lp2 = T[T.length-1], pl = T[Math.max(0, T.length-6)];
+    const hd = Math.hypot(lp2.x - pl.x, lp2.y - pl.y) || 1;
+    F.havenPos = { x: lp2.x + (lp2.x - pl.x)/hd * 220, y: lp2.y + (lp2.y - pl.y)/hd * 220 };
+    banner('🏡 ' + F.havenName.toUpperCase() + ' IS IN SIGHT', 4000);
+    fabSay(F.havenName + ' is in sight. Almost home.');
+  }
+  if (F.roadDone >= F.road) { endGame(true); return; }
+}
+function fcEnemies(dt) {
+  const F = S.fc; if (!F) return;
+  const alive = fcAliveWagons();
+  const shelter = (F.ringT / FC.ringForm) > 0.75;
+  for (const e of S.enemies) {
+    /* chasers run up the trail — they have your scent */
+    if (e.fcChaser && !e.fcFree) {
+      e.trailD += e.speed * dt;
+      const p = fcTrailAt(e.trailD);
+      e.x = p.x; e.y = p.y;
+      const tail = fcTailD();
+      if (e.trailD >= tail - 45 || alive.some(w => dist2(e, w) < 60*60) || dist2(e, S.player) < 45*45)
+        e.fcFree = 1;
+      continue;
+    }
+    /* the General's aura pins and is mutual, as everywhere */
+    const dp = dist(e, S.player);
+    if (!S.routed && dp < BG_RANGE) { S.playerHp -= e.dps * 0.72 * dt; continue; }
+    /* otherwise: the wagons */
+    let w = null, wd = 1e12;
+    for (const ww of alive) { const dd = dist2(e, ww); if (dd < wd) { wd = dd; w = ww; } }
+    if (!w) continue;
+    if (wd < 12*12) {
+      w.hp -= e.dps * ((shelter && w.type === 'people') ? 0.7 : 1) * dt;
+      if (w.hp <= 0) fcWagonLost(w);
+    } else {
+      const dl = Math.sqrt(wd) || 1;
+      e.x += (w.x - e.x)/dl * e.speed * dt;
+      e.y += (w.y - e.y)/dl * e.speed * dt;
+    }
+  }
+}
+$('bHalt').onclick = () => { if (FABC()) fcHaltToggle(); };
+$('bMilitia').onclick = () => {
+  if (!FABC() || !S.fc) return;
+  S.fc.armed = !S.fc.armed;
+  toast(S.fc.armed ? '🗡️ The refugees take up arms (15 🌾/min)' : '🗡️ The militia stands down', S.fc.armed ? 'good' : undefined);
+  logEvent(S.fc.armed ? '🗡️ Militia armed' : '🗡️ Militia stood down');
+};
+/* =================== FABLEAUGB "WARPATH" ENGINE (mode 'fableb' only) =================== */
+const FABB_CAMPNAMES = ['Redfang','Ashpit','Blackmaw','Wolfden','Bonehill','Grimhollow','Rotfen','Snagtooth','Gorecliff','Thornmaze'];
+function fabbLedger() { try { return JSON.parse(localStorage.getItem('fdCampaign') || '{}'); } catch(e) { return {}; } }
+function fabbWarband() { try { return JSON.parse(localStorage.getItem('fdWarband') || '[]'); } catch(e) { return []; } }
+function fabbInit() {
+  const mins = S.surviveSecs ? S.surviveSecs / 60 : 25;
+  const nCamps = mins <= 15 ? 3 : mins <= 25 ? 4 : 6;
+  S.surviveSecs = 0;                       // Warpath has no clock — you win by conquest
+  const led = fabbLedger();
+  S.fabb = { camps: [], citadel: null, banners: 0, renown: 0,
+             fervorT: 0, pips: 0, lastDist: 0, lastRealT: 0,
+             besetAt: 0, startedOp: true,
+             war: led.war || 1, front: led.front || 0 };
+  /* tier-up pace by difficulty (waveSize is the difficulty fingerprint: 0.7 / 1.0 / 1.35) */
+  S.fabb.tierUpSecs = CFG.waveSize < 0.9 ? 320 : CFG.waveSize > 1.2 ? 180 : 240;
+  /* place camps: 320–550 m out, ≥70° apart */
+  const used = [];
+  const namePool = FABB_CAMPNAMES.slice().sort(() => Math.random() - 0.5);
+  for (let i = 0; i < nCamps; i++) {
+    let a, tries = 0;
+    do { a = Math.random() * Math.PI * 2; tries++; }
+    while (tries < 200 && used.some(u => Math.abs(Math.atan2(Math.sin(a-u), Math.cos(a-u))) < 70*Math.PI/180));
+    used.push(a);
+    const r = 320 + Math.random() * 230;
+    S.fabb.camps.push({ id: i, name: namePool[i % namePool.length] + ' Camp',
+      x: Math.cos(a)*r, y: Math.sin(a)*r, tier: (led.front >= 5 ? 2 : 1),
+      revealed: false, dead: false, burn: 0, leaderless: false,
+      rumorJit: (Math.random()-0.5) * 0.5,
+      nextSpawnAt: S.t + 30 + Math.random()*40, tierUpAt: S.t + S.fabb.tierUpSecs,
+      nextRaidAt: S.t + 150 + Math.random()*60, replenishAt: 0, garrisonUp: false });
+  }
+  const ca = Math.random() * Math.PI * 2, cr = 550 + Math.random() * 100;
+  S.fabb.citadel = { name: 'The Citadel', x: Math.cos(ca)*cr, y: Math.sin(ca)*cr,
+                     revealed: false, dead: false, burn: 0, garrisonUp: false, replenishAt: 0 };
+  /* the Warband rides again: persistent veteran knights */
+  const band = fabbWarband().slice(0, TD.knight.cap);
+  if (band.length) {
+    S.knights = band.map((b, i) => { const k = mkKnight(10 + i*6, 10);
+      k.name = b.name; k.kills = b.kills || 0; k.rank = b.rank || 0; k.campaigns = (b.campaigns || 0) + 1;
+      return k; });
+    toast('🐴 The Warband rides again: ' + band.map(b => b.name).join(', '), 'good');
+    logEvent('🐴 Warband mustered — ' + band.map(b => FAB_RANKS[b.rank||0] + b.name + ' (' + (b.kills||0) + ' kills)').join(' · '));
+  }
+  logEvent('⚔️ War ' + S.fabb.war + ', a new operation — ' + nCamps + ' enemy camps in the region');
+}
+function fabbCampQuota(tier) { return { grunts: tier + 1, wolf: tier >= 2 ? 1 : 0, brute: tier >= 3 ? 1 : 0 }; }
+function fabbSpawnAt(base, type, extra) {
+  const st = ENEMY_TYPES[type];
+  const e = { type, ...st, hp:st.hp, maxHp:st.hp,
+    speed: TD.eSpeed[type] ? TD.eSpeed[type]*ENEMY_SPD : st.speed*ENEMY_SPD,
+    x: base.x + (Math.random()-.5)*36, y: base.y + (Math.random()-.5)*36,
+    band:null, target:null, retargetIn:0,
+    slideDir: Math.random() < 0.5 ? 1 : -1, blockT: 0, slideT: 0, ...extra };
+  S.enemies.push(e); return e;
+}
+function fabbRaiseGarrison(c, isCitadel) {
+  const tier = isCitadel ? 3 : c.tier;
+  const q = fabbCampQuota(tier);
+  for (let i = 0; i < q.grunts + (isCitadel ? 2 : 0); i++) fabbSpawnAt(c, 'grunt', { garrison:1, cid: isCitadel ? 'cit' : c.id, ax: c.x, ay: c.y });
+  for (let i = 0; i < q.wolf; i++) fabbSpawnAt(c, 'wolf', { garrison:1, cid: isCitadel ? 'cit' : c.id, ax: c.x, ay: c.y });
+  for (let i = 0; i < q.brute; i++) fabbSpawnAt(c, 'brute', { garrison:1, cid: isCitadel ? 'cit' : c.id, ax: c.x, ay: c.y });
+  if (isCitadel) {
+    const nm = 'Warchief ' + fabEnemyName();
+    fabbSpawnAt(c, 'brute', { garrison:1, cid:'cit', ax:c.x, ay:c.y, warchief:true, eName:nm,
+      hp:1500, maxHp:1500, dps:45, r:11, color:'#450a0a', bounty:30, power:12, speed:1.1*ENEMY_SPD });
+  } else if (!c.leaderless) {
+    fabbSpawnAt(c, 'grunt', { garrison:1, cid:c.id, ax:c.x, ay:c.y, chief:true,
+      eName: 'Chief ' + fabEnemyName(), hp:100, maxHp:100, dps:12, r:6, color:'#7f1d1d', bounty:8, power:2 });
+  }
+  c.garrisonUp = true;
+}
+function fabbGarrisonCount(cid) { let n = 0; for (const e of S.enemies) if (e.garrison && e.cid === cid) n++; return n; }
+function fabbReveal(c, isCitadel) {
+  c.revealed = true;
+  if (!c.garrisonUp) fabbRaiseGarrison(c, isCitadel);
+  sfx('front');
+  banner('🏕️ ' + c.name.toUpperCase() + ' SIGHTED — ' + compass(Math.atan2(c.y, c.x)), 3500);
+  toast('🏕️ ' + c.name + ' confirmed to the ' + compass(Math.atan2(c.y, c.x)) + (isCitadel ? '' : ' (tier ' + c.tier + ')') + ' — its smoke now marks it', 'good');
+  logEvent('🏕️ ' + c.name + ' scouted (' + Math.round(Math.hypot(c.x, c.y)) + ' m ' + compass(Math.atan2(c.y, c.x)) + ')');
+  fabSay(c.name + ' sighted, ' + fabSpoken(Math.atan2(c.y, c.x)) + '.');
+}
+function fabbBurn(c, isCitadel) {
+  c.dead = true; c.burn = 0;
+  const F = S.fabb;
+  /* survivors: some rout, 2+tier turn avenger and hunt YOU */
+  let avengers = 0, tier = isCitadel ? 3 : c.tier;
+  for (const e of S.enemies) if (e.garrison && e.cid === (isCitadel ? 'cit' : c.id)) {
+    e.garrison = 0;
+    if (!e.warchief && avengers < 2 + tier) { avengers++;
+      e.avenger = 1; e.avengerUntil = S.t + 45; e.speed = 2.6 * ENEMY_SPD; }
+  }
+  S.supply += 40; S.iron += 15; S.stone += 15;
+  F.banners++; F.renown += isCitadel ? 12 : 4 + tier;
+  sfx('warcry');
+  banner('🔥 ' + c.name.toUpperCase() + ' BURNS!', 4000);
+  logEvent('🔥 ' + c.name + ' burned — banner taken (+40🌾 +15⚙️ +15🧱)' + (avengers ? '; ' + avengers + ' avengers give chase!' : ''));
+  toast('🔥 ' + c.name + ' burns! ' + (avengers ? '⚠️ ' + avengers + ' avengers are hunting YOU — run!' : ''), avengers ? 'bad' : 'good');
+  fabSay(c.name + ' burns! ' + (avengers ? 'Avengers give chase. Run home.' : ''));
+  /* a captive knight, one time in four */
+  if (!isCitadel && Math.random() < 0.25) {
+    const k = mkKnight(c.x, c.y); k.rescued = true; k.hp = k.maxHp * 0.6;
+    S.knights.push(k);
+    banner('🛡️ A CAPTIVE FREED — ' + k.name.toUpperCase() + ' JOINS YOU', 3000);
+    logEvent('🛡️ ' + k.name + ' freed from ' + c.name + ' — he rides with the Warband');
+    fabSay((k.name) + ' is freed. He rides with you.');
+  }
+  if (isCitadel) {
+    S.enemies.length = 0;
+    setTimeout(() => endGame(true), 600);
+  } else if (F.camps.every(cc => cc.dead)) {
+    const cit = F.citadel;
+    fabbReveal(cit, true);
+    banner('🏯 THE CITADEL IS REVEALED — END THIS', 4500);
+    fabSay('Every camp burns. The Citadel is revealed. End this.');
+    logEvent('🏯 The Citadel revealed (' + Math.round(Math.hypot(cit.x, cit.y)) + ' m ' + compass(Math.atan2(cit.y, cit.x)) + ')');
+  }
+}
+function fabbTick(dt) {
+  const F = S.fabb; if (!F) return;
+  /* War March fervor: sustained pace arms the party */
+  const rdt = Math.max(0.001, S.realT - F.lastRealT);
+  if (rdt > 0.25) {
+    const spd = (S.dist - F.lastDist) / rdt;
+    F.lastDist = S.dist; F.lastRealT = S.realT;
+    if (spd > 2.6) F.fervorT = Math.min(60, F.fervorT + rdt);
+    else if (spd < 1.5) F.fervorT = Math.max(0, F.fervorT - rdt * 2);
+    const pips = Math.min(3, Math.floor(F.fervorT / 20));
+    if (pips > F.pips) { sfx('claim');
+      toast('⚑ War March — fervor ' + pips + '/3 (+' + pips*12 + '% party arms)', 'good'); }
+    F.pips = pips;
+  }
+  const objs = F.camps.concat(F.citadel && F.citadel.revealed ? [F.citadel] : []);
+  for (const c of objs) {
+    const isCit = c === F.citadel;
+    if (c.dead) continue;
+    /* scouting: you or a knight within 130 m confirms it */
+    if (!c.revealed) {
+      let seen = Math.hypot(c.x - S.player.x, c.y - S.player.y) < 130;
+      if (!seen) for (const k of S.knights) if (Math.hypot(c.x - k.x, c.y - k.y) < 130) { seen = true; break; }
+      if (seen) fabbReveal(c, isCit);
+    }
+    /* the trickle marches from ITS gate */
+    if (!isCit && S.t >= c.nextSpawnAt && S.t >= S.spawnPauseUntil) {
+      c.nextSpawnAt = S.t + (80 / c.tier) * (c.leaderless ? 1.5 : 1);
+      fabbSpawnAt(c, 'grunt', {});
+    }
+    /* growth: an ignored camp is a worsening war */
+    if (!isCit && c.tier < 3 && S.t >= c.tierUpAt) {
+      c.tierUpAt = S.t + F.tierUpSecs; c.tier++;
+      if (c.revealed) { sfx('keep');
+        banner('🏕️ ' + c.name.toUpperCase() + ' GROWS — TIER ' + c.tier, 3000);
+        fabSay(c.name + ' grows bolder.'); }
+      logEvent('🏕️ ' + c.name + ' grew to tier ' + c.tier + (c.revealed ? '' : ' (unscouted)'));
+      if (c.garrisonUp) fabbRaiseGarrison(c, false);
+    }
+    /* war parties: tier-2+ camps send announced columns */
+    if (!isCit && c.tier >= 2 && S.t >= c.nextRaidAt && S.t >= S.spawnPauseUntil) {
+      c.nextRaidAt = S.t + 110 + Math.random()*40;
+      for (let i = 0; i < c.tier + 2; i++) fabbSpawnAt(c, i === 0 && c.tier >= 3 ? 'brute' : 'grunt', {});
+      sfx('front');
+      banner('⚠️ WAR PARTY — ' + compass(Math.atan2(c.y, c.x)) + '!', 3000);
+      logEvent('⚠️ War party marching from ' + c.name + ' (' + (c.tier+2) + ' raiders)');
+      fabSay('A war party marches from the ' + fabSpoken(Math.atan2(c.y, c.x)) + '.');
+    }
+    /* garrison replenishes while the camp lives */
+    if (c.revealed && S.t >= c.replenishAt) {
+      c.replenishAt = S.t + 60;
+      const want = fabbCampQuota(isCit ? 3 : c.tier);
+      const total = want.grunts + want.wolf + want.brute + (isCit ? 3 : 1);
+      if (fabbGarrisonCount(isCit ? 'cit' : c.id) < total) fabbSpawnAt(c, 'grunt', { garrison:1, cid: isCit ? 'cit' : c.id, ax:c.x, ay:c.y });
+    }
+    /* the burn: stand at their fire and end them */
+    const need = isCit ? 16 : 12;
+    if (Math.hypot(c.x - S.player.x, c.y - S.player.y) < 18 && !S.routed) {
+      if (c.burn === 0) { toast('🔥 Torching ' + c.name + ' — hold your ground!', 'good'); fabSay('Burn it.'); }
+      c.burn += dt;
+      if (c.burn >= need) fabbBurn(c, isCit);
+    } else if (c.burn > 0) c.burn = Math.max(0, c.burn - dt * 2);
+  }
+  /* the Keep is beset — the sprint-home alarm */
+  if (S.t - F.besetAt > 60) {
+    let near = 0;
+    for (const e of S.enemies) if (!e.garrison && e.x*e.x + e.y*e.y < 60*60) near++;
+    if (near >= 3 && Math.hypot(S.player.x, S.player.y) > 250) {
+      F.besetAt = S.t;
+      sfx('keep');
+      banner('🛡️ THE KEEP IS BESET — ' + near + ' AT THE WALLS!', 4000);
+      toast('🛡️ ' + near + ' raiders at the Keep and you are ' + Math.round(Math.hypot(S.player.x, S.player.y)) + ' m away!', 'bad');
+      logEvent('🛡️ The Keep beset (' + near + ' raiders) — General ' + Math.round(Math.hypot(S.player.x, S.player.y)) + ' m afield');
+      fabSay('The keep is beset! ' + near + ' at the walls!');
+    }
+  }
+}
+function fabbSaveCampaign(won) {
+  try {
+    const led = fabbLedger();
+    led.war = S.fabb.war;
+    led.ops = (led.ops || 0) + 1;
+    led.banners = (led.banners || 0) + S.fabb.banners;
+    if (won) { led.wins = (led.wins || 0) + 1; led.front = Math.min(5, (led.front || 0) + 1); }
+    else { led.losses = (led.losses || 0) + 1; led.front = Math.max(0, (led.front || 0) - 1); }
+    let warWon = false;
+    if (led.front >= 5) { warWon = true; led.war = (led.war || 1) + 1; led.front = 0; }
+    localStorage.setItem('fdCampaign', JSON.stringify(led));
+    /* the living ride on; the dead are dead forever */
+    const band = S.knights.filter(k => k.hp > 0).map(k =>
+      ({ name: k.name, kills: k.kills || 0, rank: k.rank || 0, campaigns: k.campaigns || 0 }));
+    localStorage.setItem('fdWarband', JSON.stringify(band.slice(0, TD.knight.cap)));
+    return { led, warWon, saved: band.length };
+  } catch(e) { return { led: {}, warWon: false, saved: 0 }; }
+}
+function fabbMenuMeta() {
+  const led = fabbLedger();
+  if (!led.ops) return '';
+  return '⚔️ War ' + (led.war || 1) + ' · front ' + '█'.repeat(led.front || 0) + '▁'.repeat(5 - (led.front || 0)) +
+         ' · 🚩 ' + (led.banners || 0) + ' banners · warband of ' + fabbWarband().length;
+}
 /* =================== TOWER DEFENSE ENGINE =================== */
 const wallStanding = c => c && c.tier > 0 && c.wallHp > 0 && c.owner === 1;
 function openVector(n) {
@@ -1396,6 +2555,8 @@ function openVector(n) {
   const sign = n === 2 ? S.vecSign : -S.vecSign;
   const a = S.latentDir + sign*off;
   S.vectors.push(a);
+  sfx('front');
+  fabSay('A new front opens. Look ' + fabSpoken(a) + '.');
   banner('⚠️ NEW ATTACK FRONT — ' + compass(a) + '!', 3500);
   toast('⚠️ Scouts report raiders massing to the ' + compass(a) + ' — a second front!', 'bad');
   logEvent('⚠️ Attack front #' + S.vectors.length + ' opened (' + compass(a) + ')');
@@ -1406,42 +2567,126 @@ function tdSpawner(dt) {
   if (S.vectors.length < Math.min(2, CFG.vectors) && frac >= CFG.vec2At) openVector(2);
   if (S.vectors.length < Math.min(3, CFG.vectors) && frac >= CFG.vec3At) openVector(3);
   if (S.t < S.nextSpawnAt || S.t < S.spawnPauseUntil) return;
-  /* ramping trickle: interval halves every spawnHalf seconds; more fronts = more total pressure */
-  const interval = Math.max(TD.spawnMin, TD.spawnBase * Math.pow(0.5, S.t / TD.spawnHalf))
-                   * Math.pow(0.8, S.vectors.length - 1);
+  /* HONEST spawning (v0.11): everyone spawns at the arena rim — no deadline warping. The spawn
+     RATE is the familiar ramp (interval halves every spawnHalf; more fronts = more pressure).
+     Difficulty is accounted in ARRIVAL space instead: the finale surge and the unit mix are
+     scheduled by when units will REACH the keep (tau = t + R/v), so slow brutes get a head start
+     and the surge is dispatched early enough to land before the horn. Whatever is still marching
+     when the horn sounds is real, visible, and continuable. */
+  let interval = Math.max(TD.spawnMin, TD.spawnBase * Math.pow(0.5, S.t / TD.spawnHalf))
+                 * Math.pow(0.8, S.vectors.length - 1);
+  const gruntTravel = ARENA_R / (TD.eSpeed.grunt * ENEMY_SPD);
+  const tauG = S.t + gruntTravel;                       // when a grunt spawned now would arrive
+  if (S.surviveSecs && tauG > S.surviveSecs*0.8 && tauG <= S.surviveSecs) interval *= 0.6;
   S.nextSpawnAt = S.t + interval;
   /* per-spawn: pick an open front; triangular ±60° around it; 20% anywhere */
   let a;
   const vec = S.vectors[Math.floor(Math.random()*S.vectors.length)] ?? S.latentDir;
   if (Math.random() < 0.8) a = vec + (Math.random() + Math.random() - 1) * (Math.PI/3);
   else a = Math.random() * Math.PI * 2;
-  /* composition ramps: wolves from ~6 min, brutes from ~12 min */
+  /* composition keyed to ARRIVAL time per type: wolf attacks land from ~6 min, brute attacks
+     from ~12-14 min — so brutes (857 s crossing) start lumbering out almost immediately */
   const r = Math.random();
-  const wolfP = clamp((S.t - 360) / 1200, 0, 0.25);
-  const bruteP = clamp((S.t - 720) / 2400, 0, 0.12);
+  const tauW = S.t + ARENA_R / (TD.eSpeed.wolf * ENEMY_SPD);
+  const tauB = S.t + ARENA_R / (TD.eSpeed.brute * ENEMY_SPD);
+  let wolfP = clamp((tauW - 360) / 1200, 0, 0.25);
+  let bruteP = clamp((tauB - 720) / 2400, 0, 0.12);
+  /* FableAug named nights bend the mix; the Quiet Night thins the trickle */
+  const nMod = (FAB() && S.fab) ? S.fab.nightMod : null;
+  if (nMod === 'teeth') wolfP = Math.min(0.5, Math.max(0.2, wolfP * 2.5));
+  if (nMod === 'iron') bruteP = Math.min(0.25, Math.max(0.08, bruteP * 2));
+  if (nMod === 'quiet') S.nextSpawnAt = S.t + interval * 1.6;
   const type = r < bruteP ? 'brute' : r < bruteP + wolfP ? 'wolf' : 'grunt';
   const st = ENEMY_TYPES[type];
-  S.enemies.push({ type, ...st, hp:st.hp, maxHp:st.hp,
-                   speed: TD.eSpeed[type] * ENEMY_SPD,
-                   x: Math.cos(a)*ARENA_R + (Math.random()-.5)*30,
-                   y: Math.sin(a)*ARENA_R + (Math.random()-.5)*30,
+  const v = TD.eSpeed[type] * ENEMY_SPD;
+  const spawnR = ARENA_R;
+  const en = { type, ...st, hp:st.hp, maxHp:st.hp,
+                   speed: v,
+                   x: Math.cos(a)*spawnR + (Math.random()-.5)*30,
+                   y: Math.sin(a)*spawnR + (Math.random()-.5)*30,
                    band:null, target:null, retargetIn:0,
-                   slideDir: Math.random() < 0.5 ? 1 : -1, blockT: 0, slideT: 0 });
+                   slideDir: Math.random() < 0.5 ? 1 : -1, blockT: 0, slideT: 0 };
+  /* FableAug: every 7th raider is somebody (every 3rd on the Quiet Night) */
+  if (FAB() && S.fab && (++S.fab.spawnCount % (nMod==='quiet' ? 3 : 7) === 0)) {
+    const tr = ['swift','stout','cruel'][Math.floor(Math.random()*3)];
+    en.elite = true; en.trait = tr;
+    en.eName = fabEnemyName() + ' ' + FAB_TRAITS[tr];
+    en.hp *= 1.6; en.maxHp = en.hp; en.bounty *= 3; en.power *= 1.5;
+    if (tr==='swift') en.speed *= 1.25;
+    if (tr==='stout') { en.hp *= 1.4; en.maxHp = en.hp; }
+    if (tr==='cruel') en.dps *= 1.3;
+  }
+  S.enemies.push(en);
 }
 function tdEnemies(dt) {
+  /* FableAug field effects, computed once per tick */
+  let fabSpd = 1, warlord = null, braz = null, F = (FAB() && S.fab) ? S.fab : null;
+  if (F) {
+    const dark = fabDark();
+    fabSpd = dark > 0.5 ? (F.nightMod === 'torches' ? 1.2 : 1.12) : 1;
+    warlord = S.enemies.find(e => e.warlord) || null;
+    braz = [];
+    for (const c of S.cells.values()) if (c.structure === 'brazier' && c.owner === 1) braz.push(c);
+  }
   for (const e of S.enemies) {
+    /* FableAug: the champion stalks the General, not the Keep */
+    if (e.champ) {
+      const dp0 = dist(e, S.player);
+      if (dp0 > 20) { const m0 = fabSpd * (warlord && dist2(e,warlord) < 120*120 ? 1.15 : 1);
+        e.x += (S.player.x-e.x)/dp0 * e.speed * m0 * dt;
+        e.y += (S.player.y-e.y)/dp0 * e.speed * m0 * dt; }
+      else if (!S.routed) S.playerHp -= e.dps * 0.72 * (F ? F.m.pDef : 1) * dt;
+      continue;
+    }
+    /* FableAug: wolves refuse firelight (braziers; the Dawnstar makes them fear you too) */
+    if (F && e.type === 'wolf') {
+      let flee = null, fd = 1e12;
+      for (const b of braz) { const dd = (e.x-b.cx)**2 + (e.y-b.cy)**2; if (dd < fd) { fd = dd; flee = {x:b.cx, y:b.cy, r:65}; } }
+      if (F.wolfFear) { const dd = dist2(e, S.player); if (dd < fd && dd < 40*40) { fd = dd; flee = {x:S.player.x, y:S.player.y, r:40}; } }
+      if (flee && fd < flee.r * flee.r) {
+        const dl2 = Math.sqrt(fd) || 1;
+        e.x += (e.x-flee.x)/dl2 * e.speed * dt; e.y += (e.y-flee.y)/dl2 * e.speed * dt;
+        continue;
+      }
+    }
     /* knights in melee: fight them */
     let kn=null, kd=1e12;
     for (const k of S.knights) { const dd=dist2(e,k); if (dd<kd){kd=dd;kn=k;} }
     if (kn && kd < ENEMY_MELEE*ENEMY_MELEE) { kn.hp -= e.dps*0.8*dt; continue; }
     /* the General's bodyguard — in TD you are mortal: a 4-cluster beats you */
     const dp = dist(e, S.player);
-    if (!S.routed && dp < BG_RANGE) { S.playerHp -= e.dps*0.72*dt; continue; }
+    if (!S.routed && dp < BG_RANGE) { S.playerHp -= e.dps*0.72*(F ? F.m.pDef : 1)*dt; continue; }
     /* at the keep? */
-    if (Math.hypot(e.x, e.y) < 14) { S.keepHp -= e.dps*dt; continue; }
+    if (Math.hypot(e.x, e.y) < 14) { S.keepHp -= e.dps*dt;
+      if (F) F.flashUntil = S.realT + 0.22; continue; }
+    /* Warpath: garrisons hold their camp; avengers hunt the General for a while */
+    if (e.garrison) {
+      const da = Math.hypot(e.x - e.ax, e.y - e.ay);
+      let foe = null, fdd = 1e12;
+      if (!S.routed) { const pd2 = dist2(e, S.player);
+        if (pd2 < fdd && Math.hypot(S.player.x - e.ax, S.player.y - e.ay) < 60) { fdd = pd2; foe = S.player; } }
+      for (const k of S.knights) { const kd2 = dist2(e, k);
+        if (kd2 < fdd && Math.hypot(k.x - e.ax, k.y - e.ay) < 60) { fdd = kd2; foe = k; } }
+      if (foe && fdd > ENEMY_MELEE*ENEMY_MELEE * 0.6) {
+        const fl = Math.sqrt(fdd) || 1;
+        e.x += (foe.x - e.x)/fl * e.speed * dt; e.y += (foe.y - e.y)/fl * e.speed * dt;
+      } else if (!foe && da > 24) {
+        e.x += (e.ax - e.x)/da * e.speed * dt; e.y += (e.ay - e.y)/da * e.speed * dt;
+      }
+      continue;
+    }
+    if (e.avenger) {
+      if (S.t > e.avengerUntil) { e.avenger = 0; e.speed = TD.eSpeed[e.type] ? TD.eSpeed[e.type]*ENEMY_SPD : e.speed; }
+      else {
+        const pd = dist(e, S.player) || 1;
+        if (pd > BG_RANGE * 0.85) { e.x += (S.player.x - e.x)/pd * e.speed * dt; e.y += (S.player.y - e.y)/pd * e.speed * dt; }
+        continue;
+      }
+    }
     /* march on the keep, flowing around walls (they cannot judge wall damage — only presence) */
     const dl = Math.hypot(e.x, e.y) || 1;
-    const sx = -e.x/dl * e.speed * dt, sy = -e.y/dl * e.speed * dt;
+    const horn = warlord && e !== warlord && dist2(e, warlord) < 120*120 ? 1.15 : 1;
+    const sx = -e.x/dl * e.speed * fabSpd * horn * dt, sy = -e.y/dl * e.speed * fabSpd * horn * dt;
     const nc = cellAt(e.x+sx, e.y+sy), cHere = cellAt(e.x, e.y);
     if (wallStanding(nc) && nc !== cHere) {
       e.blockT += dt;
@@ -1466,13 +2711,26 @@ function tdEnemies(dt) {
   }
 }
 function hitWallTD(c, e, dt) {
-  c.wallHp -= e.dps * (e.type==='brute' ? 2 : 1) * dt;
+  const F = (FAB() && S.fab) ? S.fab : null;
+  c.wallHp -= e.dps * (e.type==='brute' ? 2 : 1) / (F ? F.m.wallHp : 1) * dt;
+  if (F && c.tier > 0 && c.wallHp < TD.walls[c.tier].hp * 0.3) c.scarLow = true;
   if (c.wallHp <= 0) {
     c.wallHp = 0; c.tier = 0; c.fort = false; c.repairing = false;
+    sfx('breach');
+    fabSay('A wall has fallen ' + fabSpoken(Math.atan2(c.cy, c.cx)) + '.');
     toast('💥 A wall has fallen!', 'bad'); logEvent('💥 Wall destroyed');
   }
 }
 function tdWalls(dt) {
+  const F = (FAB() && S.fab) ? S.fab : null;
+  /* the Keep's own garrison: combat power of a Tier-1 wall (Spiked Gates doubles it) */
+  {
+    const W = TD.walls[1];
+    let tgt=null, td_=1e12;
+    for (const e of S.enemies) { const dd = e.x*e.x + e.y*e.y; if (dd<td_){td_=dd;tgt=e;} }
+    if (tgt && td_ < W.range*W.range)
+      tgt.hp -= W.dps * (F ? F.m.keepDps : 1) * (tgt.armored ? W.am : 1) * dt;
+  }
   for (const c of S.cells.values()) {
     if (!(c.tier > 0) || c.owner !== 1) continue;
     const W = TD.walls[c.tier];
@@ -1482,20 +2740,28 @@ function tdWalls(dt) {
       for (const e of S.enemies) if (e.armored) { const dd=(e.x-c.cx)**2+(e.y-c.cy)**2; if (dd<td_){td_=dd;tgt=e;} }
     }
     if (!tgt) for (const e of S.enemies) { const dd=(e.x-c.cx)**2+(e.y-c.cy)**2; if (dd<td_){td_=dd;tgt=e;} }
-    if (tgt && td_ < W.range*W.range)
-      tgt.hp -= W.dps * (tgt.armored ? W.am : 1) * dt;
+    const rng = W.range + (F ? F.m.wallRange : 0);
+    if (tgt && td_ < rng*rng)
+      tgt.hp -= W.dps * (F ? F.m.wallDps : 1) * (1 + 0.08*(c.scars||0)) * (tgt.armored ? W.am : 1) * dt;
     /* repair: started by the General's presence, continues on its own; faster attended */
     if (c.wallHp < W.hp) {
       const near = Math.hypot(S.player.x-c.cx, S.player.y-c.cy) <= COMMAND_RANGE;
       if (near && !c.repairing) { c.repairing = true; toast('🔧 Repair started', 'good'); }
       if (c.repairing) c.wallHp = Math.min(W.hp, c.wallHp + (near ? TD.repairNear : TD.repairFar)*dt);
-      if (c.wallHp >= W.hp) c.repairing = false;
+      if (c.wallHp >= W.hp) { c.repairing = false;
+        /* FableAug battle scars: a wall nursed back from the brink earns a stripe */
+        if (F && c.scarLow) { c.scarLow = false;
+          if ((c.scars||0) < 2) { c.scars = (c.scars||0) + 1;
+            toast('🎖 A wall earns a battle scar (+8% archer damage)', 'good');
+            logEvent('🎖 Wall decorated — ' + c.scars + (c.scars>1?' scars':' scar')); } }
+      }
     }
   }
 }
 function tdKnights(dt) {
+  const F = (FAB() && S.fab) ? S.fab : null;
   for (const k of S.knights) {
-    const spd = TD.knight.speed * (DEF_MOVE_SPEED/1.9);
+    const spd = TD.knight.speed * (DEF_MOVE_SPEED/1.9) * (F ? F.m.kSpd : 1);
     /* order refusal below 25% — heads home and sulks until 50% */
     if (!k.refuse && k.hp < k.maxHp*TD.knight.refuseAt) {
       k.refuse = true; k.wps = []; k.mode = 'returning';
@@ -1510,7 +2776,9 @@ function tdKnights(dt) {
     if (hunting && pd > (TD.knight.range*0.8)**2) {
       moveToward(k, prey.x, prey.y, spd, dt);
     } else if (hunting) {
-      prey.hp -= TD.knight.dps * (prey.armored ? TD.knight.armorMult : 1) * dt;
+      prey.hp -= TD.knight.dps * (1 + 0.08*(k.rank||0))
+                 * ((FABB() && S.fabb && k.mode === 'follow') ? (1 + 0.12*S.fabb.pips) : 1)
+                 * (prey.armored ? TD.knight.armorMult : 1) * dt;
     } else if (k.mode === 'riding' && k.wps.length) {
       const wp = k.wps[k.wpIdx];
       moveToward(k, wp.x, wp.y, spd, dt);
@@ -1520,9 +2788,26 @@ function tdKnights(dt) {
         k.hp = Math.max(k.maxHp*0.2, k.hp - TD.knight.attrition*dt);
       if (dist(k, wp) < 6) {
         k.wpIdx++;
-        if (k.wpIdx >= k.wps.length) { k.wps=[]; k.wpIdx=0; k.mode='returning';
-          toast('🐴 Knight finished his circuit — riding back to you', 'good'); }
+        if (k.wpIdx >= k.wps.length) {
+          k.wps=[]; k.wpIdx=0;
+          /* Warpath: a route ending at a wall means "hold this ground" */
+          const cw = cellAt(k.x, k.y);
+          let nearWall = wallStanding(cw);
+          if (!nearWall && FABB()) for (const cc of S.cells.values())
+            if (wallStanding(cc) && Math.hypot(cc.cx-k.x, cc.cy-k.y) < 25) { nearWall = true; break; }
+          if (FABB() && nearWall) { k.mode = 'posted';
+            toast('🐴 ' + (k.name||'A knight') + ' posts the wall — he holds until recalled (tap him to recall)', 'good');
+            logEvent('🐴 ' + (k.name||'Knight') + ' posted on garrison duty'); }
+          else { k.mode='returning';
+            toast('🐴 Knight finished his circuit — riding back to you', 'good'); }
+        }
       }
+    } else if (k.mode === 'posted') {
+      /* stands his ground; the hunt branch above still fights anything within 45 m */
+    } else if (k.mode === 'escort' && FABC() && S.fc) {
+      const w = S.fc.wagons[k.escortIdx];
+      if (!w || w.dead) { k.mode = 'follow'; }
+      else if (dist(k, w) > 14) moveToward(k, w.x, w.y, spd, dt);
     } else if (k.mode === 'returning') {
       moveToward(k, S.player.x, S.player.y, spd, dt);
       unitCapture(k);
@@ -1533,20 +2818,77 @@ function tdKnights(dt) {
     /* healing: fast at keep/springs, slow at the General's side, trickle otherwise */
     const calm = !S.enemies.some(e => dist2(e,k) < 40*40);
     if (calm && k.hp < k.maxHp) {
-      const springs2 = ownedConn(c=>c.feature==='spring');
-      const zone = Math.hypot(k.x,k.y) < 50 || springs2.some(sp => Math.hypot(sp.cx-k.x, sp.cy-k.y) < SPRING_R);
+      let zone;
+      if (FABC() && S.fc) {
+        zone = S.fc.wagons.some(w => !w.dead && w.type === 'shrine' && Math.hypot(w.x-k.x, w.y-k.y) < 35)
+            || S.fc.springs.some(sp => Math.hypot(sp.x-k.x, sp.y-k.y) < 60);
+      } else {
+        const springs2 = ownedConn(c=>c.feature==='spring');
+        zone = Math.hypot(k.x,k.y) < 50 || springs2.some(sp => Math.hypot(sp.cx-k.x, sp.cy-k.y) < SPRING_R);
+      }
       const nearGen = dist(k, S.player) < 30;
       k.hp = Math.min(k.maxHp, k.hp + (zone ? 15 : nearGen ? 4 : 1)*dt);
     }
   }
   for (let i=S.knights.length-1;i>=0;i--) if (S.knights[i].hp<=0) {
-    toast('💀 A knight has fallen!', 'bad'); logEvent('💀 Knight lost');
+    const k = S.knights[i];
+    sfx('knight');
+    if ((FAB() || FABB()) && k.name) {
+      toast('🕯 ' + FAB_RANKS[k.rank||0] + k.name + ' has fallen (' + (k.kills||0) + ' kills)', 'bad');
+      logEvent('🕯 ' + FAB_RANKS[k.rank||0] + k.name + ' has fallen — ' + (k.kills||0) + ' kills to his name');
+      if (S.fab) S.fab.renown += 1;
+      if (S.fabb) S.fabb.renown += 1;
+      fabSay((k.name || 'A knight') + ' has fallen.');
+    } else { toast('💀 A knight has fallen!', 'bad'); logEvent('💀 Knight lost'); }
     S.knights.splice(i,1);
+  }
+}
+
+/* =================== ALERTS: sound + vibration =================== */
+let AC = null, lastVibe = 0;
+function initAudio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } }
+function tone(freq, dur, type, vol, when, slide) {
+  if (!AC) return;
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'square';
+    const t0 = AC.currentTime + (when || 0);
+    o.frequency.setValueAtTime(freq, t0);
+    if (slide) o.frequency.linearRampToValueAtTime(slide, t0 + dur);
+    g.gain.setValueAtTime(vol || 0.15, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  } catch(e){}
+}
+function sfx(name) {
+  if (CFG.alerts === 0) return;
+  initAudio();
+  const vibe = p => { const now = performance.now();
+    if (now - lastVibe < 1500 && name!=='keep' && name!=='rout' && name!=='lose') return;
+    lastVibe = now; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
+  switch (name) {
+    case 'front':  tone(220,0.25,'square',0.2,0,175); tone(220,0.3,'square',0.2,0.32,160); vibe([200,100,200]); break;
+    case 'breach': tone(130,0.3,'sawtooth',0.25,0,55); vibe([100,50,100]); break;
+    case 'keep':   tone(72,0.5,'sine',0.35,0,50); tone(60,0.4,'sine',0.3,0.15,45); vibe([300,100,300]); break;
+    case 'rout':   tone(320,0.6,'sawtooth',0.22,0,70); vibe([400]); break;
+    case 'event':  tone(523,0.12,'sine',0.2); tone(659,0.12,'sine',0.2,0.14); tone(784,0.22,'sine',0.2,0.28); vibe([80,60,80,60,200]); break;
+    case 'claim':  tone(659,0.1,'sine',0.22); tone(880,0.2,'sine',0.22,0.12); vibe([60,40,60]); break;
+    case 'knight': tone(220,0.4,'triangle',0.22,0,110); vibe([150]); break;
+    case 'win':    [523,659,784,1047].forEach((f,i)=>tone(f,0.28,'sine',0.22,i*0.15)); vibe([100,50,100,50,400]); break;
+    case 'lose':   tone(220,0.9,'sawtooth',0.25,0,55); vibe([500,200,500]); break;
+    case 'warcry': tone(140,0.6,'sawtooth',0.32,0,320); vibe([300]); break;
   }
 }
 
 /* =================== TD SPRINT EVENTS (general-only prizes) =================== */
 function spawnSprintEvent() {
+  /* FableAug widens the pool: wagon / cache / champion's duel / knight-errant rescue */
+  if (FAB() && S.fab) {
+    const roll = Math.random();
+    if (roll < 0.22) { fabSpawnDuel(); return; }
+    if (roll < 0.44) { fabSpawnRescue(); return; }
+  }
   if (Math.random() < 0.5) {
     /* enemy supply wagon: crosses the field on a chord — intercept it YOURSELF */
     const b = Math.random()*Math.PI*2;                    // bearing of closest approach
@@ -1557,9 +2899,10 @@ function spawnSprintEvent() {
     S.event = { type:'wagon', x: mx + px2*420*sgn, y: my + py2*420*sgn,
                 tx: mx - px2*420*sgn, ty: my - py2*420*sgn, ttl: 240 };
     const d = Math.round(dist(S.event, S.player));
-    banner('🛒 Enemy supply wagon spotted!', 3000);
-    toast('🛒 Wagon crossing '+compass(Math.atan2(S.event.y,S.event.x))+', '+d+' m away — intercept it YOURSELF for its cargo!', 'good');
-    logEvent('🛒 Supply wagon sighted ('+d+' m)');
+    sfx('event');
+    banner('🐂 Enemy supply wagon spotted!', 3000);
+    toast('🐂 Ox-wagon crossing '+compass(Math.atan2(S.event.y,S.event.x))+', '+d+' m away — intercept it YOURSELF for its cargo!', 'good');
+    logEvent('🐂 Supply wagon sighted ('+d+' m)');
   } else {
     /* windfall cache: race the clock */
     const a = Math.random()*Math.PI*2, r = 150 + Math.random()*150;
@@ -1569,32 +2912,86 @@ function spawnSprintEvent() {
     const kind = ['supply','iron','stone'][Math.floor(Math.random()*3)];
     S.event = { type:'cache', x:ex, y:ey, ttl: 90, kind };
     const d = Math.round(Math.hypot(ex-S.player.x, ey-S.player.y));
+    sfx('event');
     banner('✨ Windfall spotted — 90 s!', 3000);
     toast('✨ A '+kind+' cache '+d+' m to the '+compass(Math.atan2(ey-S.player.y, ex-S.player.x))+' — sprint before it\'s gone!', 'good');
     logEvent('✨ Windfall cache spotted ('+d+' m, '+kind+')');
   }
+}
+function fabSpawnDuel() {
+  const a = Math.atan2(S.player.y, S.player.x) + (Math.random()-0.5)*0.8;
+  const nm = 'Champion ' + fabEnemyName();
+  S.enemies.push({ type:'champion', hp:260, maxHp:260, dps:20, armored:false, r:7,
+                   color:'#0e7490', bounty:8, power:3, champ:true, eName:nm,
+                   speed: 1.7 * ENEMY_SPD,
+                   x: Math.cos(a)*ARENA_R, y: Math.sin(a)*ARENA_R,
+                   band:null, target:null, retargetIn:0, slideDir:1, blockT:0, slideT:0 });
+  S.event = { type:'duel', ttl: 300, name: nm };
+  sfx('event');
+  banner('🗡️ ' + nm.toUpperCase() + ' CHALLENGES YOU', 4000);
+  toast('🗡️ ' + nm + ' has entered the field — he hunts YOU. Beat him for glory (+40🌾)', 'bad');
+  logEvent('🗡️ ' + nm + ' issues a challenge');
+  fabSay('A champion challenges you to a duel.');
+}
+function fabSpawnRescue() {
+  const a = Math.random() * Math.PI * 2, r = ARENA_R * (0.45 + Math.random()*0.25);
+  const nm = fabKnightName();
+  S.event = { type:'rescue', x: Math.cos(a)*r, y: Math.sin(a)*r, ttl: 120, name: nm };
+  const d = Math.round(dist(S.event, S.player));
+  sfx('event');
+  banner('🛡️ A KNIGHT LIES WOUNDED — ' + fmtT(120), 3500);
+  toast('🛡️ ' + nm + ' lies wounded ' + d + ' m to the ' + compass(Math.atan2(S.event.y - S.player.y, S.event.x - S.player.x)) + ' — reach him before he bleeds out!', 'bad');
+  logEvent('🛡️ Knight-errant down (' + d + ' m) — 120 s to reach him');
+  fabSay('A knight lies wounded. Ride to him.');
 }
 function tdEvents(dt) {
   if (!S.event && S.t >= S.nextEventAt) spawnSprintEvent();
   if (!S.event) return;
   const ev = S.event;
   ev.ttl -= dt;
-  if (ev.type === 'wagon') {
+  if (ev.type === 'duel') {
+    if (ev.ttl <= 0) {
+      const ci = S.enemies.findIndex(e => e.champ);
+      if (ci >= 0) S.enemies.splice(ci, 1);
+      toast('🗡️ ' + (ev.name||'The champion') + ' spits at your feet and rides away', 'bad');
+      logEvent('🗡️ Duel unanswered — ' + (ev.name||'the champion') + ' departs');
+      S.event = null;
+    } else if (!S.enemies.some(e => e.champ)) S.event = null;   // resolved elsewhere
+  } else if (ev.type === 'rescue') {
+    if (!S.routed && dist(ev, S.player) < 25) {
+      const k = mkKnight(ev.x, ev.y);
+      k.name = ev.name; k.rescued = true;
+      S.knights.push(k);
+      if (S.fab) S.fab.renown += 3;
+      sfx('claim');
+      banner('🛡️ ' + ev.name.toUpperCase() + ' RIDES WITH YOU', 3500);
+      toast('🛡️ ' + ev.name + ' — rescued! He joins your knights, free and grateful (+3 renown)', 'good');
+      logEvent('🛡️ ' + ev.name + ' rescued — a knight owes you his life');
+      fabSay((ev.name||'The knight') + ' rides with you.');
+      S.event = null;
+    } else if (ev.ttl <= 0) {
+      toast('🕯 The knight-errant bled out alone…', 'bad');
+      logEvent('🕯 The wounded knight was not reached in time');
+      S.event = null;
+    }
+  } else if (ev.type === 'wagon') {
     moveToward(ev, ev.tx, ev.ty, 1.1, dt);
     if (!S.routed && dist(ev, S.player) < 25) {
       S.supply += 60; S.iron += 20; S.stone += 20;
-      banner('🛒 WAGON CAPTURED! +60🌾 +20⚙️ +20🧱', 3000);
-      logEvent('🛒 Supply wagon captured (+60🌾 +20⚙️ +20🧱)');
+      sfx('claim');
+      banner('🐂 WAGON CAPTURED! +60🌾 +20⚙️ +20🧱', 3000);
+      logEvent('🐂 Supply wagon captured (+60🌾 +20⚙️ +20🧱)');
       S.event = null;
     } else if (ev.ttl <= 0 || dist(ev, {x:ev.tx, y:ev.ty}) < 10) {
-      toast('🛒 The wagon slipped away…', 'bad');
-      logEvent('🛒 Supply wagon escaped');
+      toast('🐂 The wagon slipped away…', 'bad');
+      logEvent('🐂 Supply wagon escaped');
       S.event = null;
     }
   } else {
     if (!S.routed && dist(ev, S.player) < 20) {
       const gain = ev.kind==='supply' ? '+50🌾' : ev.kind==='iron' ? '+20⚙️' : '+20🧱';
       if (ev.kind==='supply') S.supply += 50; else if (ev.kind==='iron') S.iron += 20; else S.stone += 20;
+      sfx('claim');
       banner('✨ CACHE CLAIMED! '+gain, 2500);
       logEvent('✨ Windfall claimed ('+gain+')');
       S.event = null;
@@ -1604,13 +3001,14 @@ function tdEvents(dt) {
       S.event = null;
     }
   }
-  if (!S.event) S.nextEventAt = S.t + CFG.eventGap * (0.8 + Math.random()*0.5);
+  if (!S.event) S.nextEventAt = S.t + CFG.eventGap * ((FAB() && S.fab) ? S.fab.m.evGap * (S.fab.nightMod==='fire' ? 0.5 : 1) : 1) * (0.8 + Math.random()*0.5);
 }
 
 /* =================== UPDATE =================== */
 let lastT = null;
 function frame(now) {
   if (S.phase==='over' || S.phase==='won') return;
+  if (S.draftOpen) { lastT = now; requestAnimationFrame(frame); return; }
   if (lastT == null) lastT = now;
   const rawDt = Math.min((now-lastT)/1000, 0.1);
   lastT = now;
@@ -1692,9 +3090,10 @@ function update(dt) {
   if (S.connDirty && S.connTimer<=0) { recomputeConnectivity(); S.connTimer=0.5; }
   for (const c of S.cells.values()) {
     if (c.owner!==1 || !c.connected) continue;
-    if (c.feature==='grain') S.supply += RATES.grain/PLENTY*dt;
-    if (c.structure==='mine') S.iron += RATES.mine/PLENTY*dt;
-    if (c.structure==='quarry') S.stone += RATES.quarry/PLENTY*dt;
+    const pM = (FAB() && S.fab) ? S.fab.m.prod : 1;
+    if (c.feature==='grain') S.supply += RATES.grain/PLENTY*pM*dt;
+    if (c.structure==='mine') S.iron += RATES.mine/PLENTY*pM*dt;
+    if (c.structure==='quarry') S.stone += RATES.quarry/PLENTY*pM*dt;
   }
   const springs = ownedConn(c=>c.feature==='spring');
   const nearSpring = p => springs.some(sp => Math.hypot(sp.cx-p.x, sp.cy-p.y) < SPRING_R);
@@ -1706,8 +3105,29 @@ function update(dt) {
   }
 
   /* --- spawning: relentless waves (classic) or ramping trickle (td) --- */
-  if (S.gameMode === 'td') {
-    tdSpawner(dt);
+  if (TDL()) {
+    if (FAB() && S.fab) {
+      fabNightTick();
+      /* Battle Stride: sustained real pace charges a combat surge */
+      const F = S.fab, rdt = Math.max(0.001, S.realT - F.lastRealT);
+      if (rdt > 0.25) {
+        const spd = (S.dist - F.lastDist) / rdt;
+        F.lastDist = S.dist; F.lastRealT = S.realT;
+        if (!F.strideReady) {
+          if (spd > 2.6) F.stride = Math.min(100, F.stride + rdt * 5);
+          else F.stride = Math.max(0, F.stride - rdt * 10);
+          if (F.stride >= 100) { F.strideReady = true;
+            toast('⚡ Battle Stride ready — your next brawl opens hard', 'good');
+            logEvent('⚡ Battle Stride earned'); sfx('claim'); }
+        }
+      }
+      if (S.t >= F.nextLogAt) { F.nextLogAt = S.t + 10;
+        F.threatLog.push([Math.round(S.t), +S.enemies.reduce((p,e)=>p+(e.power||1),0).toFixed(1)]);
+        if (F.threatLog.length > 500) F.threatLog.shift(); }
+    }
+    if (FABB()) fabbTick(dt); else tdSpawner(dt);
+  } else if (FABC()) {
+    fcTick(dt);
   } else {
     checkReveals();
     if (S.t >= S.nextWaveAt) {
@@ -1723,20 +3143,14 @@ function update(dt) {
   }
 
   /* --- td: knights, walls, exercise clock --- */
-  if (S.gameMode === 'td') {
-    tdKnights(dt);
+  if (TDL() || FABC()) tdKnights(dt);
+  if (TDL()) {
     tdWalls(dt);
     tdEvents(dt);
-    if (CFG.strength !== 0 && S.realT >= S.exNextAt) {
-      S.exNextAt = S.realT + 300;
-      banner('💪 20 push-ups when safe!', 3500);
-      toast('Tap 💪 when done — full heal & +20 🌾', 'good');
-      logEvent('💪 Strength break called');
-    }
   }
 
   /* --- your officer (classic) --- */
-  if (S.gameMode !== 'td' && S.officer) {
+  if (!TDL() && S.officer) {
     const o = S.officer;
     if (o.mode==='riding' && o.target) {
       moveToward(o, o.target.x, o.target.y, OFF_SPEED, dt);
@@ -1797,7 +3211,7 @@ function update(dt) {
   }
 
   /* --- building crews (classic): out from the Keep, build, return --- */
-  for (const cr of (S.gameMode==='td' ? [] : S.crews)) {
+  for (const cr of (TDL() ? [] : S.crews)) {
     const crSpd = DEF_MOVE_SPEED * ((cellAt(cr.x,cr.y)||{}).owner===1 ? 1.5 : 1);
     if (cr.mode==='out' && cr.target) {
       moveToward(cr, cr.target.x, cr.target.y, crSpd, dt);
@@ -1893,7 +3307,8 @@ function update(dt) {
 
   /* --- enemies --- */
   const keepPos = {x:0,y:0};
-  if (S.gameMode === 'td') tdEnemies(dt);
+  if (TDL()) tdEnemies(dt);
+  else if (FABC()) fcEnemies(dt);
   else for (const e of S.enemies) {
     const band = e.band ? S.bands.get(e.band) : null;
     const mode = band ? band.mode : 'feral';
@@ -1967,13 +3382,16 @@ function update(dt) {
   /* keep damage milestones for the log */
   const kp = 100*S.keepHp/KEEP_HP_MAX;
   for (const mile of [75, 50, 25]) {
-    if (kp < mile && S.keepMile > mile) { logEvent('🏰 Keep at '+mile+'% health!'); }
+    if (kp < mile && S.keepMile > mile) { logEvent('🏰 Keep at '+mile+'% health!'); sfx('keep');
+      fabSay('The keep is at ' + mile + ' percent!');
+      toast('🏰 The Keep is at '+mile+'%!', 'bad'); }
   }
   S.keepMile = Math.min(S.keepMile, kp);
 
   /* --- player rout & recovery --- */
   if (!S.routed && S.playerHp <= 0) {
     S.playerHp = 0; S.routed = true;
+    sfx('rout');
     banner('🩸 Your bodyguard is scattered!', 3000);
     logEvent('🩸 You were routed');
     toast('Retreat! No aura or capturing until you recover (fastest at the Keep or a spring)', 'bad');
@@ -1981,7 +3399,7 @@ function update(dt) {
   const calmPlayer = !S.enemies.some(e => dist2(e,S.player) < 60*60);
   if (calmPlayer && S.playerHp < PLAYER_HP_MAX) {
     const zone = Math.hypot(S.player.x,S.player.y) < 50 || nearSpring(S.player);
-    const boost = S.gameMode==='td' ? (zone ? 9 : 2.5) : (zone ? 18 : 6);   // TD: wounds linger
+    const boost = (TDL() ? (zone ? 9 : 2.5) : (zone ? 18 : 6)) * ((FAB() && S.fab) ? S.fab.m.heal : 1);   // TD: wounds linger
     S.playerHp = Math.min(PLAYER_HP_MAX, S.playerHp + boost*dt);
   }
   if (S.routed && S.playerHp >= PLAYER_HP_MAX*0.6) {
@@ -1992,10 +3410,17 @@ function update(dt) {
 
   /* --- damage: bodyguard (focused) + defenders; healing --- */
   if (!S.routed) {
-    const tdMode = S.gameMode==='td';
+    const tdMode = TDL();
     const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE)
       .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, tdMode ? 1 : BG_TARGETS);
-    for (const e of engaged) e.hp -= (tdMode ? 15 : BG_DPS)*BG_MULT*dt;
+    let bgM = 1;
+    if (FABB() && S.fabb) bgM = 1 + 0.08 * S.fabb.pips;
+    if (FAB() && S.fab) { const F = S.fab;
+      if (F.strideReady && engaged.length) { F.strideReady = false; F.stride = 0; F.strideUntil = S.t + 15;
+        banner('⚡ BATTLE STRIDE!', 1800); logEvent('⚡ Battle Stride unleashed'); sfx('warcry'); }
+      if (S.t < F.strideUntil) bgM = 1.35;
+    }
+    for (const e of engaged) e.hp -= (tdMode ? 15 : BG_DPS)*BG_MULT*bgM*dt;
   }
   for (const d of S.defenders) {
     let tgt=null, td=1e12;
@@ -2012,7 +3437,7 @@ function update(dt) {
     else if (zone) d.hp = Math.min(d.maxHp, d.hp + 8*dt);
   }
   for (const c of S.cells.values()) {
-    if (S.gameMode==='td' || c.tier>0 || !c.fort || c.wallHp>=WALL_HP) continue;   // TD walls repair only via the General
+    if (TDL() || c.tier>0 || !c.fort || c.wallHp>=WALL_HP) continue;   // TD walls repair only via the General
     const pos = {x:c.cx, y:c.cy};
     if (!S.enemies.some(e => dist2(e,pos) < 50*50))
       c.wallHp = Math.min(WALL_HP, c.wallHp + (nearSpring(pos)?10:4)*dt);
@@ -2035,8 +3460,65 @@ function update(dt) {
   }
   for (let i=S.enemies.length-1;i>=0;i--) if (S.enemies[i].hp<=0) {
     const dead = S.enemies[i];
-    S.supply += dead.bounty; S.kills++;
+    const F = (FAB() && S.fab) ? S.fab : null;
+    S.supply += dead.bounty * (F ? F.m.bounty : 1); S.kills++;
     if (dead.officer) { toast('⚑ Officer down! (+'+dead.bounty+' 🌾)', 'good'); logEvent('⚑ Enemy officer slain'); }
+    if (F) {
+      /* knight kill attribution — sagas are written by whoever stood closest */
+      let kk = null, kd = 1e12;
+      for (const k of S.knights) { const dd = dist2(k, dead); if (dd < kd) { kd = dd; kk = k; } }
+      if (kk && kd < 28*28) {
+        kk.kills = (kk.kills || 0) + 1;
+        const th = [3, 8];
+        if (kk.rank < 2 && kk.kills >= th[kk.rank]) {
+          kk.rank++;
+          toast('🎖 ' + FAB_RANKS[kk.rank] + (kk.name || 'the knight') + ' — promoted in the field! (+8% blade)', 'good');
+          logEvent('🎖 ' + (kk.name || 'A knight') + ' rises to ' + (kk.rank === 1 ? 'Banneret' : 'Champion') + ' (' + kk.kills + ' kills)');
+          F.renown += 2;
+        }
+      }
+      if (dead.warlord) { S.enemies.splice(i,1); fabWarlordSlain(dead); updateHUD(); continue; }
+      if (dead.champ) {
+        S.supply += 40; F.renown += 5;
+        if (S.event && S.event.type === 'duel') S.event = null;
+        banner('🏆 ' + (dead.eName || 'The champion') + ' YIELDS — DUEL WON', 3500);
+        toast('🏆 Duel won against ' + (dead.eName || 'the champion') + ' (+40🌾, +5 renown)', 'good');
+        logEvent('🏆 Duel won — ' + (dead.eName || 'champion') + ' defeated');
+        fabSay('The duel is yours.');
+        sfx('win');
+      } else if (dead.elite) {
+        F.renown += 2;
+        toast('⚜️ ' + dead.eName + ' slain (+' + Math.round(dead.bounty * F.m.bounty) + '🌾, +2 renown)', 'good');
+        logEvent('⚜️ Slain: ' + dead.eName);
+      }
+    }
+    if (FABB() && S.fabb) {
+      /* the Warband's ledger of kills — sagas persist between operations */
+      let kk = null, kd = 1e12;
+      for (const k of S.knights) { const dd = dist2(k, dead); if (dd < kd) { kd = dd; kk = k; } }
+      if (kk && kd < 28*28) {
+        kk.kills = (kk.kills || 0) + 1;
+        const th = [3, 8];
+        if (kk.rank < 2 && kk.kills >= th[kk.rank]) { kk.rank++;
+          toast('🎖 ' + FAB_RANKS[kk.rank] + kk.name + ' — promoted in the field!', 'good');
+          logEvent('🎖 ' + kk.name + ' rises to ' + (kk.rank === 1 ? 'Banneret' : 'Champion') + ' (' + kk.kills + ' kills)');
+          S.fabb.renown += 2; }
+      }
+      if (dead.chief) {
+        const camp = S.fabb.camps.find(c => c.id === dead.cid);
+        if (camp) camp.leaderless = true;
+        S.fabb.renown += 3;
+        toast('⚑ ' + (dead.eName||'The chief') + ' slain — the camp fights leaderless', 'good');
+        logEvent('⚑ ' + (dead.eName||'A chief') + ' slain — ' + (camp ? camp.name : 'his camp') + ' is leaderless');
+        fabSay((dead.eName||'The chief') + ' is slain.');
+      } else if (dead.warchief) {
+        S.supply += 50; S.fabb.renown += 8;
+        banner('☠ ' + (dead.eName||'THE WARCHIEF') + ' FALLS', 4000);
+        logEvent('☠ ' + (dead.eName||'The Warchief') + ' slain before his own gates');
+        fabSay('The Warchief falls!');
+        sfx('win');
+      }
+    }
     S.enemies.splice(i,1);
   }
   for (let i=S.defenders.length-1;i>=0;i--) if (S.defenders[i].hp<=0) {
@@ -2051,8 +3533,8 @@ function update(dt) {
   }
 
   /* --- victory --- */
-  if (S.gameMode === 'td') {
-    if (!S.endless && S.t >= S.surviveSecs) { endGame(true); return; }
+  if (TDL()) {
+    if (!S.endless && S.surviveSecs && S.t >= S.surviveSecs) { endGame(true); return; }
   } else if (!S.enemies.length && !S.pendingSpawns.length) {
     if (S.wavesLaunched >= S.wavesToWin && !S.endless) { endGame(true); return; }
     if (!S.fieldClear && S.wavesLaunched > 0) {
@@ -2099,9 +3581,23 @@ function updateHUD() {
   $('rIron').textContent = nMine ? '+'+(nMine*RATES.mine/PLENTY).toFixed(1)+'/s' : '';
   $('sStone').textContent = Math.floor(S.stone);
   $('rStone').textContent = nQuarry ? '+'+(nQuarry*RATES.quarry/PLENTY).toFixed(1)+'/s' : '';
-  $('sKeep').textContent = Math.max(0,Math.ceil(S.keepHp));
-  if (S.gameMode === 'td') {
-    $('sWave').textContent = '⏱ ' + fmtT(S.t) + (S.endless ? ' ∞' : ' / ' + fmtT(S.surviveSecs));
+  $('sKeep').textContent = FABC() ? '—' : Math.max(0,Math.ceil(S.keepHp));
+  if (TDL() || FABC()) {
+    if (FABC() && S.fc) {
+      const F = S.fc, buf = Math.round(fcTailD() - F.pursuit);
+      $('sWave').textContent = '🏁 ' + Math.round(100 * F.roadDone / F.road) + '%'
+        + ' · 🛡 ' + Math.max(0, buf) + 'm' + ' · 👥 ' + F.souls
+        + ' · 💛 ' + Math.round(F.morale)
+        + (F.halted ? ' · ⛺' : '') + (S.t < F.howlUntil ? ' · 🐺!' : '');
+    } else if (FABB() && S.fabb) {
+      const left = S.fabb.camps.filter(c=>!c.dead).length + ((S.fabb.citadel && !S.fabb.citadel.dead) ? 1 : 0);
+      $('sWave').textContent = '⏱ ' + fmtT(S.t) + ' · 🏕️ ' + left
+        + ' · ⚔ ' + Math.round(S.enemies.reduce((p,e)=>p+(e.power||1),0))
+        + ' · 🚩 ' + S.fabb.banners + (S.fabb.pips ? ' · ⚑' + S.fabb.pips : '');
+    } else
+    $('sWave').textContent = '⏱ ' + fmtT(S.t) + (S.endless ? ' ∞' : ' / ' + fmtT(S.surviveSecs))
+      + ' · ⚔ ' + Math.round(S.enemies.reduce((p,e)=>p+(e.power||1),0))
+      + ((FAB() && S.fab && S.fab.nightNum) ? ' · 🌙 ' + S.fab.nightNum : '');
     $('sArmy').textContent = S.knights.length + '🐴';
   } else {
     const nxt = isFinite(S.nextWaveAt) ? Math.max(0,Math.ceil((S.nextWaveAt-S.t)/PACE))+'s' : '—';
@@ -2127,7 +3623,7 @@ function updateHUD() {
   $('bTower').classList.toggle('off', !canAfford(COSTS.tower));
   $('bGuard').classList.toggle('off', !canAfford(COSTS.guard));
   $('bBallista').classList.toggle('off', !canAfford(COSTS.ballista) || !(pc && pc.structure==='guard' && !pc.ballista));
-  if (S.gameMode === 'td') {
+  if (TDL()) {
     $('cFort').textContent = 'T1 15 🌾 · tap';
     $('bFort').classList.toggle('off', !canAfford(TD.walls[1].cost));
     $('bTDKnight').classList.toggle('off', S.supply < TD.knight.costS || S.iron < TD.knight.costI || S.knights.length >= TD.knight.cap);
@@ -2171,6 +3667,11 @@ function draw() {
           ctx.fillStyle = '#78350f';
           for (const [dx,dy] of [[-1,-1],[1,-1],[1,1],[-1,1]])
             ctx.fillRect(p.x + dx*(cellPx/2-5) - 2.5, p.y + dy*(cellPx/2-5) - 2.5, 5, 5);
+        }
+        if (FAB() && c.scars) for (let sc=0; sc<c.scars; sc++) {
+          ctx.beginPath(); ctx.arc(p.x - cellPx*0.32 + sc*7, p.y - cellPx*0.32, 2.6, 0, Math.PI*2);
+          ctx.fillStyle='#fbbf24'; ctx.fill();
+          ctx.lineWidth=1; ctx.strokeStyle='#78350f'; ctx.stroke();
         }
         const wmax = TD.walls[c.tier].hp;
         if (c.wallHp < wmax) bar(p.x, p.y + cellPx*0.32, cellPx*0.7, c.wallHp/wmax, c.tier===2 ? '#94a3b8' : cols[c.tier]);
@@ -2246,9 +3747,33 @@ function draw() {
       bar(p.x, p.y + iconPx*0.95, iconPx*1.4, c.integrity/GUARD_HP, '#f59e0b');
   }
 
-  ctx.font = Math.max(20, cellPx*0.85)+'px sans-serif';
-  ctx.fillText('🏰', p0.x, p0.y);
-  bar(p0.x, p0.y - Math.max(16,cellPx*0.6), 40, S.keepHp/KEEP_HP_MAX, '#22c55e');
+  if (FABC()) { /* the Keep walks — it is the train */ } else if (TDL()) {
+    /* the Keep is a fortress: big badged icon + its garrison's ground */
+    ctx.beginPath(); ctx.arc(p0.x, p0.y, ((CFG.wallMinRing||0)+0.55)*cellPx, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(120,113,108,0.16)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(120,113,108,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+    if (S.wallPick) {
+      ctx.strokeStyle = 'rgba(220,38,38,0.6)'; ctx.lineWidth = 2.5; ctx.setLineDash([5,5]);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    const kR = Math.max(24, cellPx*0.98);
+    ctx.beginPath(); ctx.arc(p0.x, p0.y - cellPx*0.12, kR, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,251,240,0.95)'; ctx.fill();
+    ctx.strokeStyle = '#57534e'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 2;
+    ctx.font = Math.max(34, cellPx*1.7)+'px sans-serif';
+    ctx.fillText('🏰', p0.x, p0.y - cellPx*0.15);
+    ctx.restore();
+    bar(p0.x, p0.y - Math.max(30, cellPx*1.35), 52, S.keepHp/KEEP_HP_MAX, '#22c55e');
+  } else {
+    ctx.font = Math.max(20, cellPx*0.85)+'px sans-serif';
+    ctx.fillText('🏰', p0.x, p0.y);
+    bar(p0.x, p0.y - Math.max(16,cellPx*0.6), 40, S.keepHp/KEEP_HP_MAX, '#22c55e');
+  }
+
+  if (FABB()) fabbDrawCamps(pxPerM, cellPx);
+  if (FABC()) fcDrawRoad(pxPerM);
 
   for (const g of S.groups) {
     if (!g.revealed) continue;
@@ -2344,6 +3869,38 @@ function draw() {
       ctx.fillStyle = bm==='raid' ? '#111827' : bm==='muster' ? '#b45309' : '#dc2626';
       ctx.fillText('⚑', p.x, p.y-20);
     }
+    if (e.warlord) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(6, e.r*pxPerM)+4, 0, Math.PI*2);
+      ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=3;
+      ctx.strokeText('☠ '+(e.eName||'Warlord'), p.x, p.y-24);
+      ctx.fillStyle='#fecaca'; ctx.fillText('☠ '+(e.eName||'Warlord'), p.x, p.y-24);
+    } else if (e.champ) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(5, e.r*pxPerM)+3.5, 0, Math.PI*2);
+      ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2; ctx.stroke();
+      ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=3;
+      ctx.strokeText('🗡 '+(e.eName||'Champion'), p.x, p.y-22);
+      ctx.fillStyle='#a5f3fc'; ctx.fillText('🗡 '+(e.eName||'Champion'), p.x, p.y-22);
+    } else if (e.warchief) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(6, e.r*pxPerM)+4, 0, Math.PI*2);
+      ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=3;
+      ctx.strokeText('☠ '+(e.eName||'Warchief'), p.x, p.y-24);
+      ctx.fillStyle='#fecaca'; ctx.fillText('☠ '+(e.eName||'Warchief'), p.x, p.y-24);
+    } else if (e.chief) {
+      ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=3;
+      ctx.strokeText('⚑ '+(e.eName||'Chief'), p.x, p.y-22);
+      ctx.fillStyle='#fca5a5'; ctx.fillText('⚑ '+(e.eName||'Chief'), p.x, p.y-22);
+    } else if (e.elite) {
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y-13); ctx.lineTo(p.x+4.5, p.y-6.5); ctx.lineTo(p.x-4.5, p.y-6.5);
+      ctx.closePath(); ctx.fillStyle='#fbbf24'; ctx.fill();
+      ctx.lineWidth=1; ctx.strokeStyle='#78350f'; ctx.stroke();
+    }
     bar(p.x, p.y-12, 20, e.hp/e.maxHp, '#f87171');
   }
 
@@ -2369,6 +3926,13 @@ function draw() {
     ctx.fillStyle = k.refuse ? '#6b7280' : '#8b5cf6'; ctx.fill();
     ctx.lineWidth=2.5; ctx.strokeStyle='#0f172a'; ctx.stroke();
     if (k.hp < k.maxHp) bar(p.x, p.y-14, 24, k.hp/k.maxHp, k.refuse?'#f87171':'#a78bfa');
+    if (FAB() && k.name && pxPerM > 0.85) {
+      ctx.font='9.5px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.lineWidth=2.5;
+      const nm = '★'.repeat(k.rank||0) + (k.rank ? ' ' : '') + k.name;
+      ctx.strokeText(nm, p.x, p.y+ur*1.3+8);
+      ctx.fillStyle='#e9d5ff'; ctx.fillText(nm, p.x, p.y+ur*1.3+8);
+    }
   }
   if (S.kCmd) {
     S.kCmd.points.forEach((w,i)=>{ const q=px(w.x,w.y);
@@ -2402,18 +3966,40 @@ function draw() {
     }
   })();
 
-  /* sprint events: wagon / cache */
-  if (S.event) {
+  /* sprint events: wagon / cache / rescue (the duel champion carries his own banner) */
+  if (S.event && S.event.type !== 'duel') {
     const ev = S.event, p = px(ev.x, ev.y);
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    if (ev.type === 'wagon') {
+    if (ev.type === 'rescue') {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+      ctx.strokeStyle='#7f1d1d'; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x, p.y, 18, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(ev.ttl/120));
+      ctx.strokeStyle='#f87171'; ctx.lineWidth=3; ctx.stroke();
+      ctx.font='14px sans-serif'; ctx.fillText('🛡️', p.x, p.y);
+      ctx.font='9.5px sans-serif';
+      ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.lineWidth=2.5;
+      ctx.strokeText(ev.name||'', p.x, p.y+24);
+      ctx.fillStyle='#fecaca'; ctx.fillText(ev.name||'', p.x, p.y+24);
+    } else if (ev.type === 'wagon') {
       const tp = px(ev.tx, ev.ty);
       ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tp.x,tp.y);
       ctx.strokeStyle='rgba(251,191,36,0.45)'; ctx.lineWidth=1.5; ctx.setLineDash([4,7]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
-      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
-      ctx.strokeStyle='#b45309'; ctx.lineWidth=2.5; ctx.stroke();
-      ctx.font='15px sans-serif'; ctx.fillText('🛒', p.x, p.y);
+      /* hand-drawn ox-wagon: canopy, cart bed, two wheels — era-appropriate */
+      const ang2 = Math.atan2(ev.ty-ev.y, ev.tx-ev.x);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(Math.cos(ang2) < 0 ? Math.PI + ang2 : ang2);   // keep it upright-ish
+      ctx.fillStyle = '#7c4a21'; ctx.strokeStyle = '#3f2408'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(-11, -4, 22, 8, 2); ctx.fill(); ctx.stroke();   // bed
+      ctx.fillStyle = '#e7d8bd';
+      ctx.beginPath(); ctx.moveTo(-9, -4); ctx.quadraticCurveTo(0, -14, 9, -4); ctx.closePath();
+      ctx.fill(); ctx.stroke();                                                       // canvas top
+      ctx.fillStyle = '#26170a';
+      for (const wx of [-6.5, 6.5]) { ctx.beginPath(); ctx.arc(wx, 5, 3.6, 0, Math.PI*2); ctx.fill(); }
+      ctx.strokeStyle = '#a16207';
+      for (const wx of [-6.5, 6.5]) { ctx.beginPath(); ctx.arc(wx, 5, 1.4, 0, Math.PI*2); ctx.stroke(); }
+      ctx.restore();
     } else {
       ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
       ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
@@ -2436,7 +4022,7 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-7,-9); ctx.lineTo(-7,9); ctx.closePath();
       ctx.fillStyle = '#fbbf24'; ctx.fill();
       ctx.rotate(-a);
-      ctx.font='13px sans-serif'; ctx.fillText(ev.type==='wagon' ? '🛒' : '✨', 0, -17);
+      ctx.font='13px sans-serif'; ctx.fillText(ev.type==='wagon' ? '🐂' : '✨', 0, -17);
       ctx.restore();
     }
   }
@@ -2451,6 +4037,328 @@ function draw() {
   if (S.mode==='gps' && S.gpsAcc) {
     ctx.beginPath(); ctx.arc(pp.x, pp.y, S.gpsAcc*pxPerM, 0, Math.PI*2);
     ctx.strokeStyle='rgba(59,130,246,0.35)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  fabDrawOverlays(pp, pxPerM);
+  if (FABB()) fabbDrawOverlays(pp, pxPerM);
+  if (FABC()) fcDrawOverlays();
+}
+
+let veilC = null;
+const fabOnScreen = p => p.x>-40 && p.y>-40 && p.x<innerWidth+40 && p.y<innerHeight+40;
+function fabDrawOverlays(pp, pxPerM) {
+  if (!FAB() || !S.fab) return;
+  const F = S.fab;
+  const dark = fabDark();
+  /* brazier glow (pre-veil, so the light reads warm) */
+  if (dark > 0.05) {
+    for (const c of S.cells.values()) if (c.structure === 'brazier' && c.owner === 1) {
+      const q = px(c.cx, c.cy); if (!fabOnScreen(q)) continue;
+      const g = ctx.createRadialGradient(q.x, q.y, 2, q.x, q.y, 60*pxPerM);
+      g.addColorStop(0, 'rgba(251,191,36,' + (0.30*dark).toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(251,191,36,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, 60*pxPerM, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  /* the night veil: darkness with pools of light (offscreen canvas, holes punched) */
+  if (dark > 0.02) {
+    if (!veilC) veilC = document.createElement('canvas');
+    if (veilC.width !== canvas.width || veilC.height !== canvas.height) {
+      veilC.width = canvas.width; veilC.height = canvas.height;
+    }
+    const v = veilC.getContext('2d');
+    const sc = canvas.width / innerWidth;
+    v.setTransform(1,0,0,1,0,0);
+    v.clearRect(0, 0, veilC.width, veilC.height);
+    v.setTransform(sc, 0, 0, sc, 0, 0);
+    v.fillStyle = 'rgba(8,10,30,' + (0.52*dark).toFixed(3) + ')';
+    v.fillRect(0, 0, innerWidth, innerHeight);
+    v.globalCompositeOperation = 'destination-out';
+    const hole = (x, y, r) => {
+      const g = v.createRadialGradient(x, y, r*0.35, x, y, r);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      v.fillStyle = g; v.beginPath(); v.arc(x, y, r, 0, Math.PI*2); v.fill();
+    };
+    hole(pp.x, pp.y, Math.max(90, 150*pxPerM));
+    const kp = px(0, 0); hole(kp.x, kp.y, Math.max(85, 140*pxPerM));
+    for (const c of S.cells.values()) if (c.structure === 'brazier' && c.owner === 1) {
+      const q = px(c.cx, c.cy); hole(q.x, q.y, Math.max(66, 110*pxPerM));
+    }
+    for (const k of S.knights) { const q = px(k.x, k.y); hole(q.x, q.y, Math.max(34, 55*pxPerM)); }
+    v.globalCompositeOperation = 'source-over';
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(veilC, 0, 0);
+    ctx.restore();
+  }
+  /* threat compass: red arcs where the enemy mass actually is (bearings from the Keep) */
+  const bins = fabThreatBins();
+  const mx = Math.max(...bins);
+  if (mx >= 3) {
+    const cx = innerWidth/2, cy = innerHeight/2, R = Math.min(innerWidth, innerHeight)*0.40;
+    const d0 = px(S.player.x, S.player.y);
+    for (let i = 0; i < 12; i++) {
+      if (bins[i] < 3) continue;
+      const wa = i * Math.PI/6;
+      const d1 = px(S.player.x + Math.cos(wa)*100, S.player.y + Math.sin(wa)*100);
+      const sa = Math.atan2(d1.y - d0.y, d1.x - d0.x);
+      const al = clamp(bins[i]/25, 0.25, 0.8);
+      ctx.beginPath(); ctx.arc(cx, cy, R, sa - Math.PI/13, sa + Math.PI/13);
+      ctx.strokeStyle = 'rgba(239,68,68,' + al.toFixed(2) + ')';
+      ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineCap = 'butt';
+      if (bins[i] === mx) {
+        ctx.font = 'bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.lineWidth = 3;
+        const lx = cx + Math.cos(sa)*(R-16), ly = cy + Math.sin(sa)*(R-16);
+        ctx.strokeText('⚔ ' + Math.round(mx), lx, ly);
+        ctx.fillStyle = '#fecaca'; ctx.fillText('⚔ ' + Math.round(mx), lx, ly);
+      }
+    }
+  }
+  /* warlord health strip */
+  const wl = S.enemies.find(e => e.warlord);
+  if (wl) {
+    const w = 230, x = innerWidth/2 - w/2, y = 78;
+    ctx.fillStyle = 'rgba(20,10,10,0.82)';
+    ctx.beginPath(); ctx.roundRect(x, y, w, 30, 8); ctx.fill();
+    ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle = '#fecaca'; ctx.fillText('☠ ' + (wl.eName || 'The Warlord'), innerWidth/2, y + 9);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x + 10, y + 19, w - 20, 6);
+    ctx.fillStyle = '#dc2626'; ctx.fillRect(x + 10, y + 19, (w - 20) * clamp(wl.hp / wl.maxHp, 0, 1), 6);
+  }
+  /* Battle Stride meter */
+  if (F.stride > 1 || F.strideReady || S.t < F.strideUntil) {
+    const x = 14, y = innerHeight - 132, w = 76;
+    ctx.font = '13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    const pulse = F.strideReady && (Math.floor(S.realT*2) % 2 === 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.roundRect(x-4, y-11, w+30, 22, 7); ctx.fill();
+    ctx.fillStyle = pulse ? '#fde047' : '#e7e5e4'; ctx.fillText('⚡', x, y);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(x+18, y-3.5, w, 7);
+    ctx.fillStyle = S.t < F.strideUntil ? '#f97316' : F.strideReady ? '#fde047' : '#fbbf24';
+    ctx.fillRect(x+18, y-3.5, w * (S.t < F.strideUntil ? clamp((F.strideUntil-S.t)/15,0,1) : F.stride/100), 7);
+  }
+  /* keep-hit vignette flash */
+  if (S.realT < F.flashUntil) {
+    ctx.fillStyle = 'rgba(220,38,38,0.14)';
+    ctx.fillRect(0, 0, innerWidth, innerHeight);
+  }
+}
+
+function fabbDrawCamps(pxPerM, cellPx) {
+  const F = S.fabb; if (!F) return;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const objs = F.camps.concat([F.citadel]);
+  for (const c of objs) {
+    if (!c) continue;
+    const isCit = c === F.citadel;
+    const p = px(c.x, c.y);
+    if (!c.revealed) {
+      if (isCit) continue;                     // the Citadel is a secret until the camps fall
+      /* rumor: an approximate bearing marker on the horizon ring */
+      const a = Math.atan2(c.y, c.x) + c.rumorJit;
+      const rp = px(Math.cos(a)*240, Math.sin(a)*240);
+      ctx.beginPath(); ctx.arc(rp.x, rp.y, 13, 0, Math.PI*2);
+      ctx.setLineDash([4,4]); ctx.strokeStyle = 'rgba(120,113,108,0.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = '13px sans-serif'; ctx.fillStyle = '#78716c'; ctx.fillText('❓', rp.x, rp.y);
+      continue;
+    }
+    if (!fabOnScreen(p)) continue;
+    const sc = Math.max(0.7, Math.min(1.6, pxPerM));
+    if (c.dead) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 12*sc, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(41,37,36,0.55)'; ctx.fill();
+      ctx.font = (13*sc)+'px sans-serif'; ctx.fillText('🔥', p.x, p.y - 2);
+      continue;
+    }
+    const tier = isCit ? 3 : c.tier;
+    /* palisade / stockade ring */
+    if (tier >= 2 || isCit) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, (isCit ? 30 : 22)*sc, 0, Math.PI*2);
+      ctx.strokeStyle = isCit ? '#292524' : '#57534e';
+      ctx.lineWidth = (tier >= 3 ? 5 : 3) * sc; ctx.stroke();
+    }
+    /* tents */
+    const tents = isCit ? 4 : tier + 1;
+    for (let i = 0; i < tents; i++) {
+      const ta = (i / tents) * Math.PI * 2 + 0.6, tr = (isCit ? 17 : 13) * sc;
+      const tx = p.x + Math.cos(ta)*tr, ty = p.y + Math.sin(ta)*tr;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty - 7*sc); ctx.lineTo(tx + 6*sc, ty + 4*sc); ctx.lineTo(tx - 6*sc, ty + 4*sc);
+      ctx.closePath();
+      ctx.fillStyle = isCit ? '#1c1917' : '#44403c'; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = '#78350f'; ctx.stroke();
+    }
+    /* bonfire (flickers) */
+    const fl = 1 + 0.25 * Math.sin(S.realT * 9 + c.x);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4.5 * sc * fl, 0, Math.PI*2);
+    ctx.fillStyle = '#f97316'; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2 * sc * fl, 0, Math.PI*2);
+    ctx.fillStyle = '#fde047'; ctx.fill();
+    /* smoke plume: rises, visible from afar */
+    for (let i = 0; i < 3; i++) {
+      const ph = ((S.realT * 9 + i * 22 + (c.x % 17)) % 62);
+      ctx.beginPath(); ctx.arc(p.x + Math.sin((ph + i*30)/9)*4*sc, p.y - 8*sc - ph*sc*0.9, (4 + ph*0.16)*sc, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(120,113,108,' + (0.4 * (1 - ph/62)).toFixed(3) + ')'; ctx.fill();
+    }
+    /* name + tier */
+    ctx.font = 'bold ' + Math.max(10, 10*sc) + 'px sans-serif';
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3;
+    const label = (isCit ? '🏯 ' : '') + c.name + (isCit ? '' : ' · T' + tier);
+    ctx.strokeText(label, p.x, p.y + (isCit ? 42 : 34) * sc);
+    ctx.fillStyle = '#7f1d1d'; ctx.fillText(label, p.x, p.y + (isCit ? 42 : 34) * sc);
+    /* burn channel progress */
+    if (c.burn > 0) {
+      const need = isCit ? 16 : 12;
+      ctx.beginPath(); ctx.arc(p.x, p.y, (isCit ? 36 : 28) * sc, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(c.burn/need));
+      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 4; ctx.lineCap='round'; ctx.stroke(); ctx.lineCap='butt';
+    }
+  }
+}
+function fabbDrawOverlays(pp, pxPerM) {
+  const F = S.fabb; if (!F) return;
+  /* fervor pips over the General */
+  if (F.pips > 0) {
+    ctx.font = 'bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.lineWidth = 3;
+    const t = '⚑'.repeat(F.pips);
+    ctx.strokeText(t, pp.x, pp.y - 26);
+    ctx.fillStyle = '#f97316'; ctx.fillText(t, pp.x, pp.y - 26);
+  }
+  /* Warchief strip while he stands */
+  const wc = S.enemies.find(e => e.warchief);
+  if (wc && F.citadel && F.citadel.revealed) {
+    const w = 230, x = innerWidth/2 - w/2, y = 78;
+    ctx.fillStyle = 'rgba(20,10,10,0.82)';
+    ctx.beginPath(); ctx.roundRect(x, y, w, 30, 8); ctx.fill();
+    ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle = '#fecaca'; ctx.fillText('☠ ' + (wc.eName || 'The Warchief'), innerWidth/2, y + 9);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x + 10, y + 19, w - 20, 6);
+    ctx.fillStyle = '#dc2626'; ctx.fillRect(x + 10, y + 19, (w - 20) * clamp(wc.hp / wc.maxHp, 0, 1), 6);
+  }
+  /* beset flash */
+  if (S.t - F.besetAt < 2.5 && F.besetAt > 0) {
+    ctx.fillStyle = 'rgba(220,38,38,' + (0.16 * (1 - (S.t - F.besetAt)/2.5)).toFixed(3) + ')';
+    ctx.fillRect(0, 0, innerWidth, innerHeight);
+  }
+}
+
+function fcDrawWagonArt(p, ang, sc, w) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(Math.cos(ang) < 0 ? Math.PI + ang : ang);
+  ctx.fillStyle = '#7c4a21'; ctx.strokeStyle = '#3f2408'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(-11*sc, -4*sc, 22*sc, 8*sc, 2*sc); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = w.type === 'people' ? '#e7d8bd' : w.type === 'granary' ? '#fde68a'
+                : w.type === 'forge' ? '#cbd5e1' : '#ddd6fe';
+  ctx.beginPath(); ctx.moveTo(-9*sc, -4*sc); ctx.quadraticCurveTo(0, -14*sc, 9*sc, -4*sc); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#26170a';
+  for (const wx of [-6.5, 6.5]) { ctx.beginPath(); ctx.arc(wx*sc, 5*sc, 3.6*sc, 0, Math.PI*2); ctx.fill(); }
+  ctx.restore();
+}
+function fcDrawRoad(pxPerM) {
+  const F = S.fc; if (!F) return;
+  const T = F.trail;
+  /* the road: the trail the people follow */
+  if (T.length > 1) {
+    ctx.beginPath();
+    let started = false;
+    for (let i = Math.max(0, T.length - 260); i < T.length; i++) {
+      const p = px(T[i].x, T[i].y);
+      if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = 'rgba(180,140,90,0.5)';
+    ctx.lineWidth = Math.max(3, 5 * pxPerM); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(120,80,40,0.5)'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 8]); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = 'butt';
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  /* springs / forage / ambush marks / shrine / straggler / haven */
+  for (const sp of F.springs) { const p = px(sp.x, sp.y);
+    if (!fabOnScreen(p)) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 60 * pxPerM, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(59,130,246,0.4)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,6]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '13px sans-serif'; ctx.fillText('⛲', p.x, p.y);
+  }
+  for (const f of F.forage) { const p = px(f.x, f.y);
+    if (!fabOnScreen(p)) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    ctx.strokeStyle = '#65a30d'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = '12px sans-serif';
+    ctx.fillText(f.kind === 'grain' ? '🌾' : f.kind === 'herbs' ? '🌿' : '🪵', p.x, p.y);
+  }
+  for (const a of F.ambushes) { if (!a.revealed) continue;
+    const p = px(a.x, a.y); if (!fabOnScreen(p)) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
+    ctx.setLineDash([4,4]); ctx.strokeStyle = 'rgba(220,38,38,0.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '12px sans-serif'; ctx.fillText(a.wolfy ? '🐺' : '⚠️', p.x, p.y);
+  }
+  if (F.shrineAt) { const p = px(F.shrineAt.x, F.shrineAt.y);
+    ctx.font = '15px sans-serif'; ctx.fillText('⛪', p.x, p.y);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 17, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(F.shrineAt.ttl/120));
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.5; ctx.stroke();
+  }
+  if (F.straggler) { const p = px(F.straggler.x, F.straggler.y);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+    ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '12px sans-serif'; ctx.fillText('👨‍👩‍👧', p.x, p.y);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 18, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(F.straggler.ttl/100));
+    ctx.strokeStyle = '#f87171'; ctx.lineWidth = 3; ctx.stroke();
+  }
+  if (F.havenPos) { const p = px(F.havenPos.x, F.havenPos.y);
+    const g = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 90 * pxPerM);
+    g.addColorStop(0, 'rgba(34,197,94,0.30)'); g.addColorStop(1, 'rgba(34,197,94,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, 90 * pxPerM, 0, Math.PI*2); ctx.fill();
+    ctx.font = Math.max(22, 26 * pxPerM) + 'px sans-serif'; ctx.fillText('🏡', p.x, p.y);
+    ctx.font = 'bold 11px sans-serif';
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3;
+    ctx.strokeText(F.havenName, p.x, p.y + 24);
+    ctx.fillStyle = '#166534'; ctx.fillText(F.havenName, p.x, p.y + 24);
+  }
+  /* the halt ring */
+  if (F.ringT > 0.2 && F.ringC) { const p = px(F.ringC.x, F.ringC.y);
+    ctx.beginPath(); ctx.arc(p.x, p.y, (FC.ringR + 6) * pxPerM, 0, Math.PI*2 * (F.ringT / FC.ringForm));
+    ctx.strokeStyle = 'rgba(124,74,33,0.7)'; ctx.lineWidth = 3; ctx.stroke();
+  }
+  /* the wagons */
+  const sc = Math.max(0.8, Math.min(1.5, pxPerM));
+  for (const w of F.wagons) {
+    if (w.dead) continue;
+    const p = px(w.x, w.y);
+    if (!fabOnScreen(p)) continue;
+    fcDrawWagonArt(p, w.a || 0, sc, w);
+    ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(w.type === 'people' ? '👥' : w.type === 'granary' ? '🌾' : w.type === 'forge' ? '⚒️' : '⛪',
+      p.x, p.y - 16*sc);
+    if (w.hp < w.maxHp) bar(p.x, p.y + 12*sc, 26, w.hp / w.maxHp, w.type === 'people' ? '#f87171' : '#fbbf24');
+  }
+  /* the Pursuit tide */
+  const pp2 = fcTrailAt(F.pursuit);
+  const tp = px(pp2.x, pp2.y);
+  const g2 = ctx.createRadialGradient(tp.x, tp.y, 6, tp.x, tp.y, 130 * pxPerM);
+  g2.addColorStop(0, 'rgba(127,29,29,0.42)'); g2.addColorStop(1, 'rgba(127,29,29,0)');
+  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(tp.x, tp.y, 130 * pxPerM, 0, Math.PI*2); ctx.fill();
+  for (let i = 0; i < 7; i++) {
+    const aa = S.realT * 1.7 + i * 0.9;
+    const rr = (18 + 34 * ((Math.sin(aa * 1.3 + i) + 1) / 2)) * pxPerM;
+    const q = { x: tp.x + Math.cos(aa) * rr, y: tp.y + Math.sin(aa) * rr };
+    ctx.beginPath(); ctx.arc(q.x, q.y, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(220,38,38,0.7)'; ctx.fill();
+  }
+  ctx.font = Math.max(14, 15 * pxPerM) + 'px sans-serif';
+  ctx.fillText('🐺', tp.x, tp.y);
+}
+function fcDrawOverlays() {
+  const F = S.fc; if (!F) return;
+  const buf = fcTailD() - F.pursuit;
+  if (buf < 60 || S.t < F.howlUntil) {
+    const a = 0.10 + 0.06 * Math.abs(Math.sin(S.realT * 3));
+    ctx.fillStyle = 'rgba(220,38,38,' + a.toFixed(3) + ')';
+    ctx.fillRect(0, 0, innerWidth, 8);
+    ctx.fillRect(0, innerHeight - 8, innerWidth, 8);
   }
 }
 function drawOffscreenArrows() {
@@ -2541,15 +4449,22 @@ $('modeRow').addEventListener('click', e => {
 });
 $('strengthRow').addEventListener('click', e => {
   const b = e.target.closest('.pill'); if (!b) return;
-  for (const p of $('strengthRow').querySelectorAll('.pill')) p.classList.remove('sel');
-  b.classList.add('sel');
-  CFG.strength = +b.dataset.str;
+  if (b.dataset.str != null) {
+    for (const p of $('strengthRow').querySelectorAll('.pill[data-str]')) p.classList.remove('sel');
+    b.classList.add('sel');
+    CFG.strength = +b.dataset.str;
+  } else {
+    for (const p of $('strengthRow').querySelectorAll('.pill[data-al]')) p.classList.remove('sel');
+    b.classList.add('sel');
+    CFG.alerts = +b.dataset.al;
+  }
   storeConfig();
 });
 (function initModePills(){
-  if (CFG.gameMode === 'classic') {
+  if (CFG.gameMode && CFG.gameMode !== 'td') {
     for (const p of $('modeRow').querySelectorAll('.pill')) p.classList.remove('sel');
-    document.querySelector('#modeRow .pill[data-mode="classic"]').classList.add('sel');
+    const mp = document.querySelector('#modeRow .pill[data-mode="'+CFG.gameMode+'"]');
+    if (mp) mp.classList.add('sel'); else { CFG.gameMode = 'td'; document.querySelector('#modeRow .pill[data-mode="td"]').classList.add('sel'); }
   }
   if (CFG.strength === 0) {
     for (const p of $('strengthRow').querySelectorAll('.pill')) p.classList.remove('sel');
@@ -2631,6 +4546,7 @@ $('btnPause').onclick = () => {
   $('btnResume').style.display = 'block';
   $('btnResume').onclick = () => resumeGame(sv);
 })();
+fabMenuMeta();
 </script>
 </body>
 </html>
