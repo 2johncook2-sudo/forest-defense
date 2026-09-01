@@ -127,8 +127,7 @@
   <button class="bbtn" id="bFort"><span class="ico">🧱</span>Wall<span class="cost" id="cFort">15 🌾 + 15 🧱</span></button>
   <button class="bbtn" id="bTDKnight" style="display:none"><span class="ico">🐴</span>Knight<span class="cost">30 🌾 + 15 ⚙️</span></button>
   <button class="bbtn" id="bBrazier" style="display:none"><span class="ico">🔥</span>Brazier<span class="cost">10 🌾 + 5 🧱</span></button>
-  <button class="bbtn" id="bHalt" style="display:none"><span class="ico">⛺</span>Circle up<span class="cost">halt &amp; fort</span></button>
-  <button class="bbtn" id="bMilitia" style="display:none"><span class="ico">🗡️</span>Militia<span class="cost">15 🌾/min</span></button>
+
 </div>
 
 <div id="stanceBar">
@@ -160,10 +159,11 @@
 </div>
 <div id="legend" style="display:none; position:absolute; right:60px; bottom:calc(env(safe-area-inset-bottom,0) + 92px);
      z-index:955; background:rgba(10,20,14,.94); border:1px solid #2e5c40; border-radius:12px; padding:10px 14px;
-     font-size:12px; color:#eaf5ec; line-height:1.7; max-width:230px"></div>
+     font-size:12px; color:#eaf5ec; line-height:1.7; max-width:230px; max-height:68vh; overflow-y:auto; overscroll-behavior:contain"></div>
 <div id="joyZone"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="sideBtns">
   <button class="sbtn" id="btnKnight" style="display:none">🐴</button>
+  <button class="sbtn" id="bHalt" style="display:none">⛺</button>
   <button class="sbtn" id="btnEx" style="display:none">💪</button>
   <button class="sbtn" id="btnLegend">❓</button>
   <button class="sbtn" id="btnOff">🐎</button>
@@ -176,7 +176,7 @@
 <div class="screen" id="menu">
   <h1>🏰 Forest Defense</h1>
   <div id="fabMeta" style="display:none;font-size:12.5px;color:#a16207;margin:-2px 0 4px"></div>
-  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.14</div>
+  <div style="opacity:.45; font-size:11px; margin-bottom:8px">v0.18</div>
   <div class="sub">A tower-defense game you play with your legs. Hold territory, run your supply lines, and lead from the front — your bodyguard makes <i>you</i> the strongest unit on the field. But not an invincible one.</div>
 
   <div class="selrow"><span class="lbl">Game mode</span></div>
@@ -184,8 +184,12 @@
     <button class="pill sel" data-mode="td">🏰 Tower Defense<br><small>walls & knights</small></button>
     <button class="pill" data-mode="fable">⚜️ FableAug<br><small>nights · bosses · relics</small></button>
     <button class="pill" data-mode="fableb">⚔️ Warpath<br><small>FableAugB — burn their camps</small></button>
-    <button class="pill" data-mode="fablec">🐂 Exodus<br><small>FableAugC — lead them home</small></button>
+    <button class="pill" data-mode="fablec">🐂 Trade Run<br><small>FableAugC — the king's charter</small></button>
     <button class="pill" data-mode="classic">⚔️ Field Army<br><small>classic troops</small></button>
+  </div>
+  <div class="selrow" id="fcRow" style="display:none">
+    <button class="pill sel" data-fcc="circuit">🗺️ Trade circuit<br><small>free trade — you pick the route</small></button>
+    <button class="pill" data-fcc="charter">👑 Royal charter<br><small>one appointed town &amp; back</small></button>
   </div>
   <div class="selrow"><span class="lbl">Session length</span></div>
   <div class="selrow" id="lenRow">
@@ -291,6 +295,18 @@
   </div>
 </div>
 
+<div id="fcTrade" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(17,13,10,.97);color:#fef3c7;overflow-y:auto;overscroll-behavior:contain">
+  <div style="max-width:560px;margin:0 auto;padding:10px 14px calc(env(safe-area-inset-bottom,0) + 24px)">
+    <div style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(17,13,10,.97);padding:8px 0;z-index:2">
+      <b id="fcTradeTitle" style="font-size:18px">Market</b>
+      <button id="fcTradeClose" style="background:#b45309;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:15px;font-weight:700">Done ✓</button>
+    </div>
+    <div id="fcTradeInfo" style="font-size:12.5px;color:#d6d3d1;margin:2px 0 7px"></div>
+    <div id="fcTradeInv" style="display:flex;gap:7px;flex-wrap:wrap;margin:0 0 9px;font-size:13.5px"></div>
+    <div id="fcTradeRows"></div>
+  </div>
+</div>
+
 <div class="screen" id="fabDraft" style="display:none">
   <h1 style="font-size:26px">🌅 Dawn — choose a relic</h1>
   <div class="sub" id="fabDraftSub">The night is survived. The fable grows.</div>
@@ -326,6 +342,7 @@ const DEFAULTS = {
   startOfficer: 1,   // 1 = begin with an officer
   pace: 1.0,         // world speed: 1.0 for running, ~0.55 for walking (real-world speed ratios preserved)
   gameMode: 'td',        // 'td' (Tower Defense, new default) or 'classic' (Field Army)
+  fcContract: 'circuit', // Trade Run: 'circuit' (free trade) or 'charter' (appointed town)
   vectors: 2,            // TD: how many attack fronts open over the round (1-3)
   vec2At: 0.66,          // TD: when the 2nd front opens (fraction of round)
   vec3At: 0.8,           // TD: when the 3rd front opens
@@ -974,10 +991,17 @@ $('btnKnight').onclick = () => {
 };
 $('btnEx').onclick = () => { $('exPanel').style.display = 'block'; };
 $('exPush').onclick = () => {
-  S.playerHp = PLAYER_HP_MAX; S.routed = false; S.supply += 20;
+  S.playerHp = PLAYER_HP_MAX; S.routed = false;
+  if (FABC() && S.fc) {
+    const add = Math.min(8, Math.max(0, fcCapacity() - fcCargoCount()));
+    S.fc.cargo.grain += add;
+    logEvent('💪 20 push-ups — full heal' + (add ? ', +' + add + ' 🌾 to the hold' : ' (hold full — no room for grain)'));
+  } else {
+    S.supply += 20;
+    logEvent('💪 20 push-ups — full heal, +20 🌾');
+  }
   $('exPanel').style.display='none';
   banner('💪 The General is restored!', 2500);
-  logEvent('💪 20 push-ups — full heal, +20 🌾');
 };
 $('exChin').onclick = () => {
   $('exPanel').style.display='none';
@@ -1000,26 +1024,72 @@ $('exKb').onclick = () => {
 $('btnLegend').onclick = () => {
   const L = $('legend');
   if (L.style.display === 'block') { L.style.display = 'none'; return; }
-  const fabExtra = FAB() ? `<br>👑 gold pip = named elite · ☠ the Warlord · 🗡 duel champion<br>
-    🕯️ brazier (night light — wolves fear it) · ⚡ Battle Stride (run fast to charge)<br>
-    red edge arcs = threat compass (where the mass is)`
-  : FABB() ? `<br>❓ rumor of a camp — confirm within 130 m · 🏕️ camp (smoke = confirmed)<br>
-    stand at their fire to 🔥 burn it · ⚑ War March fervor (sustained pace arms the party)<br>
-    route a knight to a wall = he garrisons it (tap to recall)`
-  : FABC() ? `<br>🐂 the train follows YOUR trail — stop and it stops · red tide = the Pursuit<br>
-    🛡 buffer = road between tail and tide · ⛺ circle up = instant fort (spends buffer)<br>
-    🌾🌿🪵 forage · ⚠️🐺 scouted ambush · tap 🐴 then a wagon = assign escort` : '';
-  L.innerHTML = TDL() ? `<b>Legend</b><br>
-    🔵 you (aura = bodyguard) · 🟣◆ knight<br>
-    🟤 T1 palisade · ⬜ T2 rampart · 🟡 T3 ballista<br>
-    🔴 grunt · 🟠 wolf (fast) · 🟥 big = brute (armored)<br>
-    ×N badge = that many stacked · 🏰 the Keep<br>
-    🌾⛰️🪨⛲ resources (green ring = connected)` + fabExtra : `<b>Legend</b><br>
-    🔵 you · 🔵 defender · 🟡 swordsman · 🟣◆ knight<br>
-    🐎 officer · 🔨 crew · ⚑ enemy officer<br>
-    <span style="color:#f87171">red ⚑ attack</span> · <span style="color:#cbd5e1">black ⚑ bandit</span> · <span style="color:#fbbf24">amber ⚑ muster</span><br>
-    🔴 grunt · 🟠 wolf · 🟥 brute · 🟪 raider<br>
-    ×N badge = stacked enemies`;
+  L.style.maxWidth = '302px';
+  const H = t => '<div style="margin:9px 0 2px;color:#fbbf24;font-weight:700">' + t + '</div>';
+  const controls = H('🕹️ Controls')
+    + 'You are the 🔵 General — <b>your real GPS position is the game piece</b> (joystick in Sim). '
+    + '🎯 recenter · ⏱ speed (Sim) · buttons arm a command, then tap the map. The ❓ closes when tapped again.';
+  let html;
+  if (FABC() && S.fc) {
+    const F = S.fc;
+    html = '<b>❓ The Trade Run — the full book</b>'
+      + H('🎯 The goal')
+      + 'The king demands <b>' + F.target + '💰 by dusk</b> (⏳ in the bar). You start with 25💰 and a part-loaded caravan — trade town to town, then bring it home to the 🏰 Keep with the tribute earned. <b>Being late is allowed</b>: past dusk a fine grows — 0.15💰 each second (≈9💰/min) — so one last fat deal can still beat the fine. But at <b>half again past dusk</b> the king\'s patience ends and all is lost.'
+      + H('🐂 Your caravan')
+      + 'Tap any town (or the Keep) and the wagons drive themselves there. The oxen <b>only trot at full pace on ground YOU have swept</b> — your footsteps (and your knights\') sweep a corridor; unswept road ahead means half pace. ⛺ circles the wagons into an instant fort; tap ⛺ again to roll on. Five wagons: 2× cargo (📦 10 hold each), granary, forge, shrine — each grants its perk while it lives; if the last <b>cargo</b> wagon dies, the run is over.'
+      + H('💰 Trading — tap the town flag while the caravan is there')
+      + 'Each town shows one price per good, colored against the country average: <span style="color:#4ade80">green = cheap here → BUY</span> · <span style="color:#f87171">red = dear here → SELL</span>. You sell at price−1 and buy at price+1 (the merchant\'s spread). Your own trades move the town: each unit sold pushes its price down ½, each bought pushes it up ½ — flooding one market pays less and less, so ride a circuit. Prices drift back to their nature over a few minutes. '
+      + '<b>🏴 Lawless towns</b> (red ring, black flag) have WILD prices — the best buys and the best sells in the country live there — but bandit camps shadow their roads. Decide if the margin is worth the run in. '
+      + (F.towns.some(t=>t.charter) ? 'The 👑 <b>charter town</b> pays +5 on every good — the long haul is the payday. ' : '')
+      + H('📦 The three goods — each one DOES something')
+      + '🌾 <b>Grain</b> — trade good AND the crew\'s food: they eat ~2/min from the hold (granary wagon halves it). At 0 grain morale bleeds fast.<br>'
+      + '⚒️ <b>Tools</b> — keep ≥3 aboard and the wagons mend themselves on the move.<br>'
+      + '⚔️ <b>Weapons</b> — the crew always fights with what\'s in the hold: <b>9 dmg/s while weapons last, feeble 2 at zero</b> (forge wagon ×1.5). Each ~6 s of skirmish breaks one weapon.'
+      + H('🏴 Bandit country — the land lives its own life')
+      + 'No magic tide chases you. Instead: <b>🏕️ bandit camps</b> seed the map (the villagers know them — they\'re always drawn), each raising patrols that <b>roam on their own business</b> (small 🏴 badge). A patrol only comes for you three ways: it <b>crosses your tracks or the caravan\'s fresh wheel-ruts</b> and picks up the scent (🐾 badge — you\'ll hear a horn); it gets <b>close enough to notice you</b> (❗ badge — closer is riskier, running is louder than walking, and sometimes they look right past you); or you <b>wound it</b>. So avoidance is a real tactic: circle wide around a patrol, stand still and let it pass, or route the caravan where they aren\'t. Scent goes cold if they lose you long enough.'
+      + H('🔥 Burning camps — profit in it')
+      + 'Kill a camp\'s two guards, then stand at its fire ~4 s and it burns: <b>+12–22💰 loot</b> (more at lawless-town camps), and that camp raises no more patrols. Clearing the roads pays twice.'
+      + H('🏥 Wagon health & repairs')
+      + 'Damaged wagons show a bar on the map. Four ways to mend: <b>the wainwright\'s yard</b> — free ~1.5 hp/s while wagons stand in any town; <b>pay the wainwright</b> on the trade screen to mend all instantly (ceil of damage/12 in 💰); <b>≥3 ⚒️ aboard</b> self-mends on the move; <b>⛲ springs</b> and the ⛺ ring while you stand by. The trade screen lists every wagon\'s hp.'
+      + H('🐴 Knights')
+      + 'Tap 🐴 then up to 3 waypoints to send one riding; tap 🐴 then a wagon to assign an escort. Knights <b>sweep the road as they ride</b>, and a ride that closes a loop sweeps everything inside it. Bandits trample swept ground as they cross — patrol your route.'
+      + H('🎁 The road provides')
+      + 'Little finds lie everywhere — 🌾 grain, 💰 purses (+10), ⚒️ tools, ⚔️ weapons — most a stone\'s throw OFF your line: always the question of whether the detour pays. 🧺 stranded peddlers reward a rescue. ⛲ springs heal, ⛩️ shrines bless.'
+      + H('📟 The top bar')
+      + '🌾 ⚒️ ⚔️ = the hold, live · 📦 used/space · 💰 earned/owed (−fine once late) · ⏳ time to dusk, then <b>LATE</b> · 🏴 how many parties are hunting you right now · 💛 morale — at 0 the crew deserts.'
+      + H('💪 Exercise — the point of all this')
+      + '20 push-ups: full heal +8 🌾 to the hold · 5 chin-ups: a free knight · kettlebells: the field empties. The map is your gym: sweep, patrol, slip past the patrols, run the circuit.'
+      + controls;
+  } else if (FABB()) {
+    html = '<b>❓ Warpath — help</b>'
+      + H('🎯 The goal')
+      + 'Take the fight to them: confirm rumored camps, <b>burn every camp</b>, then burn the Citadel. Victory advances the Front of a war that persists between runs; your named knights carry their deeds forward.'
+      + H('🗺️ Map key')
+      + '🔵 you (aura = bodyguard) · 🟣◆ knight · 🟤⬜🟡 walls T1–T3<br>🔴 grunt · 🟠 wolf (fast) · 🟥 brute (armored) · ×N = stacked<br>🏰 the Keep · 🌾⛰️🪨⛲ resources (green ring = connected)<br>❓ rumor — confirm within 130 m · 🏕️ camp (smoke = confirmed) — stand at their fire to 🔥 burn it<br>⚑ War March fervor: sustained pace arms the party · route a knight to a wall = he garrisons it (tap to recall)'
+      + controls;
+  } else if (FAB()) {
+    html = '<b>❓ FableAug — help</b>'
+      + H('🎯 The goal')
+      + 'Survive the waves and the <b>nights</b>. Renown buys relics at dawn; named elites and the Warlord walk the dark. Fall, and the tale still earns lifetime renown.'
+      + H('🗺️ Map key')
+      + '🔵 you (aura = bodyguard) · 🟣◆ knight · 🟤⬜🟡 walls T1–T3<br>🔴 grunt · 🟠 wolf · 🟥 brute · ×N = stacked<br>🏰 the Keep · 🌾⛰️🪨⛲ resources (green ring = connected)<br>👑 gold pip = named elite · ☠ the Warlord · 🗡 duel champion<br>🕯️ brazier (night light — wolves fear it) · ⚡ Battle Stride (run fast to charge)<br>red edge arcs = threat compass'
+      + controls;
+  } else if (TDL()) {
+    html = '<b>❓ Tower Defense — help</b>'
+      + H('🎯 The goal')
+      + 'Hold the 🏰 Keep through every wave. Walls slow the tide, knights ride your orders, resources flow while connected to the Keep.'
+      + H('🗺️ Map key')
+      + '🔵 you (aura = bodyguard) · 🟣◆ knight<br>🟤 T1 palisade · ⬜ T2 rampart · 🟡 T3 ballista<br>🔴 grunt · 🟠 wolf (fast) · 🟥 big = brute (armored)<br>×N badge = that many stacked · 🏰 the Keep<br>🌾⛰️🪨⛲ resources (green ring = connected)'
+      + controls;
+  } else {
+    html = '<b>❓ Field Army — help</b>'
+      + H('🎯 The goal')
+      + 'Hold the Keep with a marching army: raise defenders, send the officer, claim ground by walking it.'
+      + H('🗺️ Map key')
+      + '🔵 you · 🔵 defender · 🟡 swordsman · 🟣◆ knight<br>🐎 officer · 🔨 crew · ⚑ enemy officer<br><span style="color:#f87171">red ⚑ attack</span> · <span style="color:#cbd5e1">black ⚑ bandit</span> · <span style="color:#fbbf24">amber ⚑ muster</span><br>🔴 grunt · 🟠 wolf · 🟥 brute · 🟪 raider<br>×N badge = stacked enemies'
+      + controls;
+  }
+  L.innerHTML = html;
   L.style.display = 'block';
 };
 $('btnOff').onclick = () => {
@@ -1104,6 +1174,14 @@ function tdClick(p) {
     if (bk.refuse) return toast('🐴 That knight is too wounded to take orders', 'bad');
     S.kCmd = { knight: bk, points: [] };
     toast('🐴 Knight selected — tap up to 3 waypoints', 'good');
+    return;
+  }
+  if (FABC() && S.fc) {
+    for (const t of S.fc.towns) if (Math.hypot(t.x-p.x, t.y-p.y) < 45) {
+      if (S.fc.tradeUntil > S.t && Math.hypot(t.x - (S.fc._px||0), t.y - (S.fc._py||0)) < 60) { fcOpenTrade(t); return; }
+      fcSetDest(t); return;
+    }
+    if (Math.hypot(p.x, p.y) < 55) { fcSetDest({ home: true, x: 0, y: 0, name: 'the Keep' }); return; }
   }
 }
 function onMapClick(ev) {
@@ -1273,14 +1351,15 @@ function saveGame() {
                                 Math.round(d.anchor.x), Math.round(d.anchor.y),
                                 d.stance==='hold'?1:d.stance==='follow'?2:0]),
       foes: S.enemies.map(e=>[e.type, Math.round(e.x), Math.round(e.y), Math.round(e.hp), e.band,
-        (e.elite||e.warlord||e.champ||e.garrison||e.avenger||e.chief||e.warchief||e.fcChaser||e.fcFree) ?
+        (e.elite||e.warlord||e.champ||e.garrison||e.avenger||e.chief||e.warchief||e.fcFree||e.rst) ?
         { n:e.eName, tr:e.trait||0, el:e.elite?1:0, wl:e.warlord?1:0, ch:e.champ?1:0,
           mh:Math.round(e.maxHp), dp:+e.dps.toFixed(1), sp:+e.speed.toFixed(2), bt:e.bounty, pw:e.power, r:e.r,
           co:e.color, ar:e.armored?1:0,
           g:e.garrison?1:0, cid:(e.cid!=null?e.cid:null), ax:e.ax!=null?Math.round(e.ax):null, ay:e.ay!=null?Math.round(e.ay):null,
           av:e.avenger?1:0, au:e.avengerUntil!=null?+(e.avengerUntil-S.t).toFixed(1):null,
           cf:e.chief?1:0, wc:e.warchief?1:0,
-          fch:e.fcChaser?1:0, ftd:e.trailD!=null?Math.round(e.trailD):null, ffr:e.fcFree?1:0 } : 0]),
+          ffr:e.fcFree?1:0, rst:e.rst||null, ci2:(e.campId!=null?e.campId:null), gu:e.guard?1:0,
+          rm:e.rim?1:0, wx2:e.wx!=null?Math.round(e.wx):null, wy2:e.wy!=null?Math.round(e.wy):null } : 0]),
       bands: [...S.bands.entries()].map(([id,b])=>[id, b.mode, b.warnedRaid?1:0]),
       groups: S.groups.map(g=>({a:g.angle, comp:g.comp, main:g.main?1:0})),
       pend: S.pendingSpawns.map(p=>[p.type, Math.round(p.gx), Math.round(p.gy), p.band, +(p.at-S.t).toFixed(1)]),
@@ -1296,13 +1375,23 @@ function saveGame() {
       fc: (FABC() && S.fc) ? (F => ({
             tr: F.trail.filter((_,i) => i % 2 === 0 || i === F.trail.length-1)
                  .map(pt => [Math.round(pt.x), Math.round(pt.y), Math.round(pt.d)]),
-            hd:+F.head.toFixed(1), pu:+F.pursuit.toFixed(1), rd:F.road, rdd:+F.roadDone.toFixed(1),
+            hd:+F.head.toFixed(1), rdd:+F.roadDone.toFixed(1),
+            px2:F._px!=null?Math.round(F._px):null, py2:F._py!=null?Math.round(F._py):null,
+            towns: F.towns.map(t => ({ id:t.id, nm:t.name, x:Math.round(t.x), y:Math.round(t.y),
+              bs:t.base, p2:Object.fromEntries(Object.entries(t.price).map(([k,v])=>[k,+v.toFixed(1)])),
+              rv:t.revealed?1:0, pd:t.priced?1:0, ch:t.charter?1:0, lw:t.lawless?1:0 })),
+            ra:+((F.roamAt||0) - S.t).toFixed(1), bu:F.burned||0,
+            cp2:(F.camps||[]).map(c=>[Math.round(c.x),Math.round(c.y),c.dead?1:0,c.risky?1:0]),
+            dst: F.dest ? (F.dest.home ? 'home' : F.dest.id) : null,
+            cg: F.cargo, gl:+F.gold.toFixed(1), tg:F.target, dl:+(F.deadline - S.t).toFixed(1),
+            lf:+F.lateFine.toFixed(1), he:+(F.hardEnd - S.t).toFixed(1), wl:F.warnedLate?1:0,
+            tds:F.trades, tv:F.townsVisited, sc:[...F.scout].slice(-600),
+            tu:+(F.tradeUntil - S.t).toFixed(1), wh:F.warnedHalf?1:0, wd:F.warnedDusk?1:0,
             wg: F.wagons.map(w => ({ t:w.type, hp:Math.round(w.hp), s:w.souls, dd:w.dead?1:0 })),
             so:F.souls, ss:F.soulsStart, sg:F.soulsGained||0, mo:+F.morale.toFixed(1),
-            ar:F.armed?1:0, ha:F.halted?1:0, rt:+F.ringT.toFixed(1),
+            ha:F.halted?1:0, rt:+F.ringT.toFixed(1),
             rc:F.ringC ? [Math.round(F.ringC.x), Math.round(F.ringC.y)] : null,
-            hw:+(F.howlUntil-S.t).toFixed(1), nc:+(F.nextChaserAt-S.t).toFixed(1),
-            hu:F.huntAt, ev:+(F.eventAt-S.t).toFixed(1), ox:+(F.oxUntil-S.t).toFixed(1),
+            ev:+(F.eventAt-S.t).toFixed(1), ox:+(F.oxUntil-S.t).toFixed(1),
             fo:F.forage.map(f=>[Math.round(f.x),Math.round(f.y),f.kind]),
             am:F.ambushes.map(a=>[Math.round(a.x),Math.round(a.y),a.n,a.wolfy?1:0,a.revealed?1:0]),
             sp:F.springs.map(z=>[Math.round(z.x),Math.round(z.y)]),
@@ -1310,7 +1399,7 @@ function saveGame() {
             lg:[Math.round(F.lastGenPos.x),Math.round(F.lastGenPos.y)],
             pins:F.pins.slice(-80), rs:F.rescues, rn:+F.renown.toFixed(1),
             hn:F.havenName, hp2:F.havenPos ? [Math.round(F.havenPos.x),Math.round(F.havenPos.y)] : null,
-            mq:F.mileQ, cr:F.creep }))(S.fc) : null,
+            mq:F.mileQ }))(S.fc) : null,
       fabb: (FABB() && S.fabb) ? { war:S.fabb.war, front:S.fabb.front, ban:S.fabb.banners,
             rn:+S.fabb.renown.toFixed(1), fv:+S.fabb.fervorT.toFixed(1), pp:S.fabb.pips,
             tu:S.fabb.tierUpSecs, bs:+(S.t - S.fabb.besetAt).toFixed(1),
@@ -1389,9 +1478,12 @@ function resumeGame(sv) {
       if (sp.g) { e.garrison = 1; e.cid = sp.cid; e.ax = sp.ax; e.ay = sp.ay; }
       if (sp.av) { e.avenger = 1; e.avengerUntil = S.t + Math.max(1, sp.au || 10); }
       e.chief = !!sp.cf; e.warchief = !!sp.wc;
-      if (sp.fch) { e.fcChaser = 1; e.trailD = sp.ftd || 0;
-        e.speed = FC.chaserSpd[e.type] || e.speed; }
       if (sp.ffr) e.fcFree = 1;
+      if (sp.rst) { e.rst = sp.rst; e.detT = 0;
+        if (sp.ci2 != null) e.campId = sp.ci2;
+        if (sp.gu) e.guard = 1;
+        if (sp.rm) e.rim = 1;
+        if (sp.wx2 != null) { e.wx = sp.wx2; e.wy = sp.wy2; } }
     }
     return e;
   });
@@ -1417,13 +1509,29 @@ function resumeGame(sv) {
     const f = sv.fc;
     if (f) {
       S.fc = { trail: f.tr.map(pt => ({ x:pt[0], y:pt[1], d:pt[2] })),
-        head:f.hd, pursuit:f.pu, road:f.rd, roadDone:f.rdd||0,
-        wagons: f.wg.map(w => ({ type:w.t, hp:w.hp, maxHp:FC.wagonHp[w.t], souls:w.s||0, dead:!!w.dd, x:0, y:0, a:0 })),
-        souls:f.so, soulsStart:f.ss||f.so, soulsGained:f.sg||0, morale:f.mo,
-        armed:!!f.ar, halted:!!f.ha, ringT:f.rt||0, breakT:0,
+        head:f.hd, pursuit:-1e9, roadDone:f.rdd||0,
+        _px:f.px2, _py:f.py2, _pend:0,
+        towns:(f.towns||[]).map(t => ({ id:t.id, name:t.nm, x:t.x, y:t.y,
+          base:t.bs||{grain:6,tools:9,weapons:11},
+          price:Object.assign({}, t.bs||{grain:6,tools:9,weapons:11}, t.p2||{}),
+          revealed:!!t.rv, priced:true, charter:!!t.ch, lawless:!!t.lw, safeR:80 })),
+        roamAt:S.t+Math.max(10, f.ra!=null?f.ra:45), burned:f.bu||0, burnT:0, hunters:0,
+        crumbs:[], crumbAt:0, lastScentSay:-99, lastSpotSay:-99,
+        camps:(f.cp2||[]).map((v,i)=>({ id:i, x:v[0], y:v[1], dead:!!v[2], risky:!!v[3],
+                                        nextAt:S.t+15+Math.random()*20 })),
+        dest:null, tradeUntil:S.t+Math.max(0, f.tu||0), gossiped:[],
+        cargo:(c => ({ grain:c.grain||0, tools:c.tools||0, weapons:c.weapons||0 }))(f.cg||{}), gold:f.gl||0, target:f.tg||200,
+        deadline:S.t+Math.max(30, f.dl!=null?f.dl:1200),
+        lateFine:f.lf||0, hardEnd:S.t+Math.max(60, f.he!=null?f.he:(f.dl!=null?f.dl:1200)*1.5),
+        warnedLate:!!f.wl, wepBurn:0, grainAcc:0, lastWagonAlarm:-99,
+        trades:f.tds||0, townsVisited:f.tv||[],
+        scout:new Set(f.sc||[]), unswept:false, sweptToastAt:0,
+        warnedHalf:!!f.wh, warnedDusk:!!f.wd,
+        wagons: f.wg.map(w => ({ type:w.t, hp:w.hp, maxHp:FC.wagonHp[w.t]||300, souls:w.s||0, dead:!!w.dd, x:0, y:0, a:0 })),
+        souls:f.so||0, soulsStart:f.ss||0, soulsGained:f.sg||0, morale:f.mo,
+        armed:false, halted:!!f.ha, ringT:f.rt||0, breakT:0,
         ringC: f.rc ? { x:f.rc[0], y:f.rc[1] } : null, waiting:false,
-        howlUntil:S.t+Math.max(0,f.hw||0), nextChaserAt:S.t+Math.max(3,f.nc||20),
-        huntAt:f.hu||FC.huntEvery, eventAt:S.t+Math.max(10,f.ev||60), oxUntil:S.t+Math.max(0,f.ox||0),
+        eventAt:S.t+Math.max(10,f.ev||60), oxUntil:S.t+Math.max(0,f.ox||0),
         forage:(f.fo||[]).map(v=>({x:v[0],y:v[1],kind:v[2]})),
         ambushes:(f.am||[]).map(v=>({x:v[0],y:v[1],n:v[2],wolfy:!!v[3],revealed:!!v[4]})),
         springs:(f.sp||[]).map(v=>({x:v[0],y:v[1]})),
@@ -1431,7 +1539,13 @@ function resumeGame(sv) {
         lastGenPos:{ x:(f.lg||[0,0])[0], y:(f.lg||[0,0])[1] },
         pins:f.pins||[], rescues:f.rs||0, renown:f.rn||0,
         havenName:f.hn||'Aldervale', havenPos: f.hp2 ? { x:f.hp2[0], y:f.hp2[1] } : null,
-        mileQ:f.mq||1, contactT:0, lastBesetSay:0, waitToastAt:0, creep:f.cr!=null?f.cr:0.08 };
+        mileQ:f.mq||1, contactT:0, lastBesetSay:0, waitToastAt:0 };
+      if (f.dst != null) S.fc.dest = f.dst === 'home' ? { home:true, x:0, y:0, name:'the Keep' }
+                                   : (S.fc.towns.find(t => t.id === f.dst) || null);
+      if (!S.fc.camps.length) {   // an old save with no bandit country: seed one fresh
+        S.fc.camps = fcMakeCamps(S.fc, S.fc.towns.length <= 6 ? 2 : S.fc.towns.length <= 10 ? 3 : 5);
+        for (const c of S.fc.camps) if (!c.dead) fcCampGuards(c);
+      }                             // saved camps: their guards (dead or alive) came with the enemy list
     } else { S.surviveSecs = 1500; fcInit(); }
   }
   if (S.gameMode === 'fableb') {
@@ -1483,6 +1597,14 @@ addEventListener('pagehide', saveGame);
 /* =================== PER-MODE UI =================== */
 function applyModeUI() {
   const td = TDL(), fc = FABC(), classic = !td && !fc;
+  const bb = $('buildBar'); if (bb) bb.style.display = fc ? 'none' : 'flex';
+  /* the top chips become the caravan's live inventory in the Trade Run */
+  const chipIcon = (spanId, icon) => { const el = $(spanId); if (el && el.parentNode)
+    el.parentNode.firstChild.textContent = icon + ' '; };
+  chipIcon('sSupply', fc ? '🌾' : '🌾');
+  chipIcon('sIron',   fc ? '⚒️' : '⚙️');
+  chipIcon('sStone',  fc ? '⚔️' : '🧱');
+  chipIcon('sKeep',   fc ? '📦' : '🏰');
   const show = (id, on) => { const el = $(id); if (el) el.style.display = on ? '' : 'none'; };
   // build bar
   show('bDef', classic); show('bVet', classic); show('bKnight', classic);
@@ -1492,10 +1614,14 @@ function applyModeUI() {
   show('bMine', !fc); show('bQuarry', !fc);
   show('bTDKnight', td);
   show('bBrazier', FAB());
-  show('bHalt', fc); show('bMilitia', fc);
+  show('bHalt', fc);
   // side buttons
   show('btnKnight', td || fc); show('btnOff', classic); show('btnLine', classic);
   show('btnEx', (td || fc) && CFG.strength !== 0);
+  const pushBtn = $('exPush');
+  if (pushBtn) pushBtn.innerHTML = fc
+    ? '✅ 20 push-ups<br><small style="font-weight:400">fully heals you (+8 🌾 to the hold)</small>'
+    : '✅ 20 push-ups<br><small style="font-weight:400">fully heals you (+20 🌾)</small>';
 }
 const mkKnight = (x, y) => ({ x, y, hp:TD.knight.hp, maxHp:TD.knight.hp, mode:'follow',
                               wps:[], wpIdx:0, refuse:false,
@@ -1543,9 +1669,9 @@ function startGame(mode, origin) {
   logEvent('🏰 Game started — '+(mode==='gps'?'GPS':'Simulator')+', '+S.wavesToWin+' waves, '+diffName+
            (JSON.stringify(CFG)!==JSON.stringify({...DEFAULTS, ...DIFF_PRESETS[document.querySelector('#diffRow .pill.sel')?.dataset.diff||'soldier']}) ? ' (custom settings)' : ''));
   requestWake();
-  banner(FABC() ? '🐂 Lead them home' : '🏰 Defend the Keep', 2200);
+  banner(FABC() ? '🐂 To market — the king is owed' : '🏰 Defend the Keep', 2200);
   toast(FABC()
-    ? 'The train follows YOUR trail — keep moving, forage as you go, and never let the red tide touch the wagons'
+    ? 'Bandit camps mark the map — trade around them, slip past their patrols, and keep ⚔️ in the hold for the ones that find you'
     : TDL()
     ? 'Raiders will trickle in — send your 🐴 knight to claim ground, run out and wall the approach!'
     : 'First wave in ~'+Math.round(S.nextWaveAt/PACE)+'s — go capture 🌾 grain fields!', 'good');
@@ -1559,12 +1685,14 @@ function endGame(won) {
   if (FABC() && S.fc) {
     const F = S.fc;
     const wag = fcAliveWagons().length, wagT = F.wagons.length;
-    $('endTitle').textContent = won ? '🏡 ' + F.havenName + ' — DELIVERED'
-      : F.lostReason === 'morale' ? '💔 The people scatter into the dark'
-      : '💔 The last wagon has fallen';
+    $('endTitle').textContent = won ? '👑 THE KING IS PAID'
+      : F.lostReason === 'patience' ? '🌆 The king\'s patience ends'
+      : F.lostReason === 'deadline' ? '🌆 Dusk fell on the road'
+      : F.lostReason === 'morale' ? '💔 The crew deserts'
+      : '💔 The last cargo wagon is lost';
     try {
       const L = fabLifetime();
-      L.renown = (L.renown||0) + F.renown + Math.round(F.souls / 4);
+      L.renown = (L.renown||0) + F.renown + Math.round(F.gold / 20);
       L.km = +((L.km||0) + S.dist/1000).toFixed(2);
       L.kills = (L.kills||0) + S.kills;
       localStorage.setItem('fdFable', JSON.stringify(L));
@@ -1573,8 +1701,8 @@ function endGame(won) {
       localStorage.setItem('fdWarband', JSON.stringify(band.slice(0, TD.knight.cap)));
     } catch(e) {}
     S.fcReport = { wag, wagT };
-    fabSay(won ? (F.souls + ' souls delivered to ' + F.havenName + '. The exodus is over.')
-               : 'The exodus has failed.');
+    fabSay(won ? ('The king is paid. ' + Math.round(F.gold - F.lateFine) + ' gold, ' + F.trades + ' deals done.')
+               : 'The trade run has failed.');
   }
   if (FABB() && S.fabb) {
     const rep = fabbSaveCampaign(won);
@@ -1594,10 +1722,15 @@ function endGame(won) {
     ? ' ' + S.enemies.length + ' raiders (\u2694 ' + Math.round(S.enemies.reduce((p,e)=>p+(e.power||1),0)) + ' power) are still in the field — keep fighting?'
     : '';
   $('endSub').textContent = (FABC() && S.fc)
-    ? (won ? S.fc.souls + ' souls walked into ' + S.fc.havenName + ' after ' + (S.fc.roadDone/1000).toFixed(1)
-             + ' km of road — you yourself ran ' + (S.dist/1000).toFixed(1) + ' km to lead them.'
-           : (S.fc.lostReason === 'morale' ? 'Hunger and fear broke the train after ' + (S.fc.roadDone/1000).toFixed(1) + ' km.'
-              : 'The wolves took the last of the people after ' + (S.fc.roadDone/1000).toFixed(1) + ' km.')
+    ? (won ? 'The caravan rolled home with ' + Math.round(S.fc.gold) + '💰' +
+             (S.fc.lateFine > 0.5 ? ' (less a ' + Math.round(S.fc.lateFine) + '💰 late fine)' : '') +
+             ' against the ' + S.fc.target + ' owed — ' +
+             S.fc.townsVisited.length + ' towns traded over ' + (S.fc.roadDone/1000).toFixed(1) +
+             ' km of road, and you yourself ran ' + (S.dist/1000).toFixed(1) + ' km.'
+           : (S.fc.lostReason === 'patience' ? 'Too deep into the night — the fine reached ' + Math.round(S.fc.lateFine) + '💰 against ' + Math.round(S.fc.gold) + '💰 earned of ' + S.fc.target + ' owed.'
+              : S.fc.lostReason === 'deadline' ? 'The levy mustered without its gold — ' + Math.round(S.fc.gold) + '💰 of ' + S.fc.target + ' when dusk fell.'
+              : S.fc.lostReason === 'morale' ? 'Hunger and fear broke the crew on the road.'
+              : 'The goods lie spilled in the mud.')
              + ' The Warband that lives will ride again.')
     : (FABB() && S.fabb)
     ? (won ? 'The Citadel burns after '+fmtT(S.t)+'. The front advances'+(S.fabbReport && S.fabbReport.rep.warWon ? ' — the WAR is won; a harder one begins.' : '.')
@@ -1617,10 +1750,12 @@ function endGame(won) {
       (S.fab.nightNum ? '<div>🌙 Nights survived</div><b>'+S.fab.nightNum+'</b>' : '') +
       (S.fab.relics.length ? '<div>Relics carried</div><b>'+S.fab.relics.length+'</b>' : '') : '') +
     ((FABC() && S.fc && S.fcReport) ?
-      '<div>👥 Souls delivered</div><b>'+S.fc.souls+' / '+(S.fc.soulsStart + (S.fc.soulsGained||0))+'</b>' +
+      '<div>💰 The king\'s tribute</div><b>'+Math.round(S.fc.gold)+' / '+S.fc.target+(S.fc.lateFine>0.5?' (fine −'+Math.round(S.fc.lateFine)+')':'')+'</b>' +
+      '<div>🏘️ Towns traded</div><b>'+S.fc.townsVisited.length+' / '+S.fc.towns.length+' ('+S.fc.trades+' deals)</b>' +
       '<div>🐂 Wagons through</div><b>'+S.fcReport.wag+' / '+S.fcReport.wagT+'</b>' +
-      '<div>👨‍👩‍👧 Families saved</div><b>'+S.fc.rescues+'</b>' +
-      '<div>💛 Morale at the gate</div><b>'+Math.round(S.fc.morale)+'</b>' +
+      '<div>🧺 Peddlers saved</div><b>'+S.fc.rescues+'</b>' +
+      '<div>🔥 Camps burned</div><b>'+(S.fc.burned||0)+'</b>' +
+      '<div>💛 Crew spirit</div><b>'+Math.round(S.fc.morale)+'</b>' +
       '<div>🏁 The road</div><b>'+(S.fc.roadDone/1000).toFixed(1)+' km (you: '+(S.dist/1000).toFixed(1)+' km)</b>' : '') +
     ((FABB() && S.fabb && S.fabbReport) ?
       '<div>🚩 Banners taken</div><b>'+S.fabb.banners+'</b>' +
@@ -1638,13 +1773,18 @@ function endGame(won) {
       let x0=1e9, x1=-1e9, y0=1e9, y1=-1e9;
       for (const p of T) { x0=Math.min(x0,p.x); x1=Math.max(x1,p.x); y0=Math.min(y0,p.y); y1=Math.max(y1,p.y); }
       for (const pin of S.fc.pins) { x0=Math.min(x0,pin[1]); x1=Math.max(x1,pin[1]); y0=Math.min(y0,pin[2]); y1=Math.max(y1,pin[2]); }
+      for (const t of S.fc.towns) { x0=Math.min(x0,t.x); x1=Math.max(x1,t.x); y0=Math.min(y0,t.y); y1=Math.max(y1,t.y); }
       const sc2 = Math.min(272/Math.max(60, x1-x0), 152/Math.max(60, y1-y0));
       const mx = p => 14 + (p.x - x0) * sc2 + (272 - (x1-x0)*sc2)/2;
       const my = p => 14 + (p.y - y0) * sc2 + (152 - (y1-y0)*sc2)/2;
       c2.beginPath();
       T.forEach((p, i) => { i ? c2.lineTo(mx(p), my(p)) : c2.moveTo(mx(p), my(p)); });
       c2.strokeStyle = '#92400e'; c2.lineWidth = 2; c2.setLineDash([5,3]); c2.stroke(); c2.setLineDash([]);
-      const cols = { loss:'#dc2626', ambush:'#f97316', save:'#16a34a', camp:'#2563eb', shrine:'#a855f7' };
+      const cols = { loss:'#dc2626', ambush:'#f97316', save:'#16a34a', camp:'#2563eb', shrine:'#a855f7', trade:'#b45309' };
+      for (const t of S.fc.towns) {
+        c2.font = '9px sans-serif'; c2.textAlign = 'center';
+        c2.fillText(t.charter ? '👑' : '🏘️', mx(t), my(t));
+      }
       for (const [type, px2, py2] of S.fc.pins) {
         c2.beginPath(); c2.arc(mx({x:px2}), my({y:py2}), 3.4, 0, Math.PI*2);
         c2.fillStyle = cols[type] || '#57534e'; c2.fill();
@@ -1653,11 +1793,10 @@ function endGame(won) {
       const st2 = T[0], en2 = T[T.length-1];
       c2.font = '11px sans-serif'; c2.textAlign = 'center';
       c2.fillText('🏰', mx(st2), my(st2));
-      c2.fillText('🏡', mx(en2), my(en2));
       c2.fillStyle = '#78716c'; c2.font = '8.5px sans-serif'; c2.textAlign = 'left';
-      c2.fillText('● lost  ● ambush  ● saved  ● camp  ● shrine', 8, 176);
+      c2.fillText('● lost  ● ambush  ● saved  ● camp  ● trade', 8, 176);
       let lx = 8;
-      for (const [t2, col] of [['lost','#dc2626'],['ambush','#f97316'],['saved','#16a34a'],['camp','#2563eb'],['shrine','#a855f7']]) {
+      for (const [t2, col] of [['lost','#dc2626'],['ambush','#f97316'],['saved','#16a34a'],['camp','#2563eb'],['trade','#b45309']]) {
         c2.fillStyle = col; c2.fillRect(lx, 170, 5, 5); lx += 8 + c2.measureText(t2).width + 9;
       }
     }, 60);
@@ -1915,36 +2054,112 @@ function fabMenuMeta() {
 /* =================== FABLEAUGC "EXODUS" ENGINE (mode 'fablec' only) =================== */
 const FC = {
   trainSpd: 1.9, spacing: 15, contactDps: 6,
-  wagonHp: { people: 300, granary: 260, forge: 260, shrine: 240 },
+  wagonHp: { cargo: 300, people: 300, granary: 260, forge: 260, shrine: 240 },
   chaserSpd: { wolf: 2.9, grunt: 2.1 }, huntEvery: 700,
   ringR: 22, ringForm: 8,
 };
 const FC_HAVENS = ['Aldervale','Elmhollow','Brightwater','Thornfree Vale','Lark Meadow','Stillbrook'];
+const FC_GOODS = {
+  grain:   { ico:'🌾', name:'Grain',   perk:'the crew eats ~2/min of it — food and trade good in one' },
+  tools:   { ico:'⚒️', name:'Tools',   perk:'≥3 aboard: wagons slowly mend themselves on the move' },
+  weapons: { ico:'⚔️', name:'Weapons', perk:'the crew fights with them by default — each skirmish burns some' },
+};
+const fcPerk = g => S.fc && S.fc.cargo[g] >= 3;
+const FC_TOWNS = ['Elmford','Saltmere','Barrowden','Foxbridge','Millhaven','Thornby','Ashwell','Greywater','Oxcombe','Dunwick'];
 function fcInit() {
   const mins = S.surviveSecs ? S.surviveSecs / 60 : 25;
-  const road = mins <= 15 ? 1600 : mins <= 25 ? 2800 : 4500;
+  const deadline = mins * 60;                 // the king's levy musters at dusk
+  const goldTarget = mins <= 15 ? 120 : mins <= 25 ? 200 : 320;
+  const nTowns = mins <= 15 ? 6 : mins <= 25 ? 10 : 14;
   S.surviveSecs = 0;
-  /* the road is wilderness: no farms, no keep — strip the settled world */
+  /* wilderness between the towns — strip the settled world */
   for (const c of S.cells.values()) { c.feature = null; if (c.structure) c.structure = null; }
   const wagons = [];
-  const types = mins <= 15 ? ['people','granary','forge','shrine']
-              : mins <= 25 ? ['people','granary','people','forge','shrine']
-              : ['people','granary','people','forge','people','shrine'];
-  for (const t of types) wagons.push({ type: t, hp: FC.wagonHp[t], maxHp: FC.wagonHp[t],
-    souls: t === 'people' ? 20 : 0, dead: false, x: 0, y: 0, a: 0 });
-  /* seed trail: the road already walked, straight in from the west */
+  for (const t of ['cargo','granary','cargo','forge','shrine'])
+    wagons.push({ type: t, hp: FC.wagonHp[t] || 300, maxHp: FC.wagonHp[t] || 300, souls: 0, dead: false, x: 0, y: 0, a: 0 });
+  /* seed trail: the caravan stands at the Keep gate, road behind it */
   const trail = [];
   for (let d = 0; d <= 400; d += 8) trail.push({ x: d - 400, y: 0, d });
-  S.fc = { trail, head: 400, pursuit: 90, road, roadDone: 0,
-    wagons, souls: wagons.reduce((a,w)=>a+w.souls,0), soulsStart: 0,
+  /* towns scattered at uniform density; each has ONE price level per good — buy at p+1,
+     sell at p−1 — colored on the map against the country's average, so the route is a
+     visible arbitrage problem before you take a single step */
+  const towns = [], namePool = FC_TOWNS.slice().sort(() => Math.random() - 0.5);
+  const R0 = 180, R1 = 760;
+  const bands = { grain: [2, 10], tools: [5, 15], weapons: [6, 17] };
+  for (let i = 0; i < nTowns; i++) {
+    let x, y, tries = 0;
+    /* stratified radii: two towns guaranteed NEAR (a quick first deal), two guaranteed FAR
+       (the long haul pays), the rest uniform over the annulus */
+    const lo = i < 2 ? R0 : i < 4 ? 520 : R0;
+    const hi = i < 2 ? 360 : R1;
+    do {
+      const r = Math.sqrt(Math.random() * (hi*hi - lo*lo) + lo*lo);   // uniform over the ring
+      const a = Math.random() * Math.PI * 2;
+      x = Math.cos(a) * r; y = Math.sin(a) * r; tries++;
+    } while (tries < 300 && towns.some(t => Math.hypot(t.x - x, t.y - y) < 135));
+    const base = {}, price = {};
+    for (const g of Object.keys(FC_GOODS)) {
+      const [lo, hi] = bands[g];
+      base[g] = lo + Math.floor(Math.random() * (hi - lo + 1));
+      price[g] = base[g];
+    }
+    towns.push({ id: i, name: namePool[i % namePool.length] + (i >= namePool.length ? ' ' + (1 + (i/namePool.length|0)) : ''),
+      x, y, base, price, revealed: true, priced: true, charter: false, safeR: 80 });
+  }
+  /* v0.18 LAWLESS TOWNS: worse roads, wilder prices — worth a run in? Their prices are
+     pushed to the extremes (either way), and a bandit camp shadows each one. */
+  const nLawless = mins <= 15 ? 1 : mins <= 25 ? 2 : 3;
+  const lawCand = towns.slice().sort((a, b) => Math.hypot(b.x, b.y) - Math.hypot(a.x, a.y));
+  for (let i = 0; i < Math.min(nLawless, lawCand.length); i++) {
+    const t = lawCand[Math.floor(Math.random() * Math.min(5, lawCand.length))];
+    if (t.lawless) { i--; continue; }
+    t.lawless = true;
+    for (const g of Object.keys(FC_GOODS)) {
+      const push = (3 + Math.floor(Math.random() * 4)) * (Math.random() < 0.5 ? -1 : 1);
+      t.base[g] = Math.max(1, Math.min(21, t.base[g] + push));
+      t.price[g] = t.base[g];
+    }
+  }
+  /* the country always offers at least one real margin (≥5💰/unit on the best pair) */
+  {
+    let bestGap = -99, bestG = 'weapons';
+    for (const g of Object.keys(FC_GOODS)) {
+      let hi2 = -99, lo2 = 99;
+      for (const t of towns) { hi2 = Math.max(hi2, t.base[g]); lo2 = Math.min(lo2, t.base[g]); }
+      const gap = hi2 - lo2 - 2;                 // sell at hi−1, buy at lo+1
+      if (gap > bestGap) { bestGap = gap; bestG = g; }
+    }
+    if (bestGap < 5) {
+      const t = towns.find(tt => tt.lawless) || lawCand[0];
+      t.base[bestG] = Math.min(21, t.base[bestG] + (5 - bestGap));
+      t.price[bestG] = t.base[bestG];
+    }
+  }
+  let target = goldTarget;
+  if (CFG.fcContract === 'charter') {
+    let far = towns[0];
+    for (const t of towns) if (Math.hypot(t.x,t.y) > Math.hypot(far.x,far.y)) far = t;
+    far.charter = true;
+    for (const g of Object.keys(FC_GOODS)) { far.base[g] += 5; far.price[g] += 5; }   // the appointed market pays dearly
+    target = mins <= 15 ? 100 : mins <= 25 ? 160 : 240;
+  }
+  S.fc = { trail, head: 400, pursuit: -1e9, roadDone: 0,
+    towns, dest: null, tradeUntil: 0, gossiped: [],
+    cargo: { grain: 12, tools: 2, weapons: 3 }, gold: 25, target, deadline,
+    lateFine: 0, hardEnd: deadline * 1.5, wepBurn: 0, lastWagonAlarm: -99,
+    trades: 0, townsVisited: [],
+    scout: new Set(), unswept: false, sweptToastAt: 0, roamAt: S.t + 45,
+    wagons, souls: 0, soulsStart: 0,
     morale: 85, armed: false, halted: false, ringT: 0, breakT: 0, ringC: null, waiting: false,
-    howlUntil: 0, nextChaserAt: S.t + 25, huntAt: FC.huntEvery, eventAt: S.t + 100 + Math.random()*50,
+    crumbs: [], crumbAt: 0, burnT: 0, burned: 0, hunters: 0,
+    lastScentSay: -99, lastSpotSay: -99, eventAt: S.t + 100 + Math.random()*50,
     forage: [], ambushes: [], springs: [], straggler: null, shrineAt: null, oxUntil: 0,
     lastGenPos: { x: 0, y: 0 }, pins: [], rescues: 0, renown: 0,
-    havenName: FC_HAVENS[Math.floor(Math.random()*FC_HAVENS.length)], havenPos: null,
-    mileQ: 1, contactT: 0, lastBesetSay: 0, waitToastAt: 0,
-    creep: 0.04 + 0.04 * (CFG.waveSize || 1) };
-  S.fc.soulsStart = S.fc.souls;
+    havenName: '', havenPos: null,
+    mileQ: 1, contactT: 0, lastBesetSay: 0, waitToastAt: 0 };
+  S.fc.camps = fcMakeCamps(S.fc, mins <= 15 ? 2 : mins <= 25 ? 3 : 5);
+  for (const c of S.fc.camps) fcCampGuards(c);
+  fcSweep();                                   // home ground starts swept
   /* the Warband guards the exodus (persistent veterans from Warpath, read + written) */
   const band = (typeof fabbWarband === 'function') ? fabbWarband().slice(0, TD.knight.cap) : [];
   if (band.length) {
@@ -1953,11 +2168,171 @@ function fcInit() {
       return k; });
     toast('🐴 The Warband guards the exodus: ' + band.map(b => b.name).join(', '), 'good');
     logEvent('🐴 Warband on escort — ' + band.map(b => FAB_RANKS[b.rank||0] + b.name).join(' · '));
+  } else {
+    /* no veterans on this device yet: two green knights volunteer for the road */
+    S.knights = [mkKnight(-20, 6), mkKnight(-28, -6)];
+    logEvent('🐴 Two knights volunteer for the road: ' + S.knights.map(k => k.name).join(' and '));
   }
-  logEvent('🐂 The Exodus begins — ' + S.fc.souls + ' souls, ' + (road/1000).toFixed(1) + ' km to ' + S.fc.havenName);
-  banner('🐂 LEAD THEM TO ' + S.fc.havenName.toUpperCase(), 4000);
-  fabSay('The exodus begins. ' + S.fc.souls + ' souls follow you. Lead them home.');
+  const ch = S.fc.towns.find(t => t.charter);
+  logEvent('🐂 The Trade Run begins — ' + S.fc.towns.length + ' towns, 12🌾 2⚒️ 3⚔️ aboard, ' +
+           S.fc.target + '💰 owed to the king by ' + fmtT(S.fc.deadline) +
+           (ch ? ' · charter: ' + ch.name : ''));
+  banner(ch ? '👑 CHARTER: ' + ch.name.toUpperCase() + ' — AND BACK' : '🐂 THE KING NEEDS ' + S.fc.target + ' GOLD', 4000);
+  toast('🗺️ Tap a town to send the caravan — it drives itself, but the oxen only trot where YOU have swept the way', 'good');
+  const nLaw = S.fc.towns.filter(t => t.lawless).length;
+  logEvent('🏕️ The villagers mark ' + S.fc.camps.length + ' bandit camps on your map'
+    + (nLaw ? ' · ' + nLaw + ' lawless town' + (nLaw > 1 ? 's' : '') + ' 🏴' : ''));
+  fabSay(ch ? 'The charter is signed. To ' + ch.name + ', and back before dusk.'
+            : 'The king needs ' + S.fc.target + ' gold by dusk. Choose our first market.');
 }
+function fcSweep() {
+  const F = S.fc; if (!F) return;
+  const gx = Math.round(S.player.x / 40), gy = Math.round(S.player.y / 40);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) F.scout.add((gx+i) + ',' + (gy+j));
+}
+function fcScouted(p) {
+  return S.fc.scout.has(Math.round(p.x / 40) + ',' + Math.round(p.y / 40));
+}
+function fcCapacity() { return fcAliveWagons().filter(w => w.type === 'cargo').length * 10; }
+function fcCargoCount() { const c = S.fc.cargo; return c.grain + c.tools + c.weapons; }
+/* ONE price level p per good per town. You SELL at p−1 and BUY at p+1 (the merchant's spread).
+   Selling pushes p down 0.5/unit, buying pushes it up 0.5/unit; p drifts back to its base
+   over time. Green on the map = cheap here (buy), red = dear here (sell). */
+function fcPrice(town, good) { return Math.max(2, Math.round(town.price[good] * 2) / 2); }
+function fcPayAt(town, good) { return Math.max(1, fcPrice(town, good) - 1); }
+function fcCostAt(town, good) { return fcPrice(town, good) + 1; }
+function fcSellRevenue(town, good, n) {
+  let rev = 0, pp = town.price[good];
+  for (let i = 0; i < n; i++) { rev += Math.max(1, Math.max(2, Math.round(pp*2)/2) - 1); pp -= 0.5; }
+  return Math.round(rev);
+}
+function fcBuyCost(town, good, n) {
+  let c = 0, pp = town.price[good];
+  for (let i = 0; i < n; i++) { c += Math.max(2, Math.round(pp*2)/2) + 1; pp += 0.5; }
+  return Math.round(c);
+}
+function fcAvgPrice(good) {
+  const F = S.fc; if (!F || !F.towns.length) return 0;
+  return F.towns.reduce((a, t) => a + t.price[good], 0) / F.towns.length;
+}
+function fcSetDest(t) {
+  const F = S.fc;
+  F.dest = t;                                   // a town object, or {home:true,x:0,y:0,name:'the Keep'}
+  F.halted = false;
+  banner('🐂 ' + (t.home ? 'HOMEWARD — TO THE KEEP' : 'TO ' + t.name.toUpperCase()), 2500);
+  logEvent('🐂 Caravan ordered to ' + (t.home ? 'the Keep' : t.name));
+  fabSay(t.home ? 'Homeward.' : 'To ' + t.name + '.');
+}
+function fcGossip(fromTown) {
+  /* prices are public in the Trade Run — gossip instead points at today's best buyer
+     for whatever fills your hold */
+  const F = S.fc;
+  const held = Object.keys(FC_GOODS).sort((a,b) => F.cargo[b] - F.cargo[a])[0];
+  if (!held || F.cargo[held] <= 0) return;
+  const best = F.towns.filter(t => t !== fromTown).sort((a,b) => fcPayAt(b,held) - fcPayAt(a,held))[0];
+  if (!best) return;
+  toast('🗣️ Merchants gossip: ' + best.name + ' pays ' + fcPayAt(best,held) + '💰 for ' + FC_GOODS[held].ico + ' right now', 'good');
+  logEvent('🗣️ Word from the road: ' + best.name + ' pays ' + fcPayAt(best,held) + '💰 for ' + FC_GOODS[held].ico);
+}
+function fcOpenTrade(town) {
+  const F = S.fc;
+  $('fcTradeTitle').textContent = (town.charter ? '👑 ' : town.lawless ? '🏴 ' : '🏘️ ') + town.name;
+  $('fcTradeInfo').textContent = (town.lawless ? 'LAWLESS ROADS — wild prices, bandits thick outside the walls · ' : '')
+    + 'green = cheap here (buy) · red = dear here (sell)';
+  const invChip = t2 => '<span style="background:#292524;border:1px solid #57534e;border-radius:9px;padding:5px 10px">' + t2 + '</span>';
+  $('fcTradeInv').innerHTML = invChip('💰 <b>' + Math.round(F.gold) + '</b>')
+    + Object.keys(FC_GOODS).map(g => invChip(FC_GOODS[g].ico + ' <b>' + F.cargo[g] + '</b> aboard')).join('')
+    + invChip('📦 ' + fcCargoCount() + '/' + fcCapacity() + ' hold');
+  const btn = (attrs, label) => '<button ' + attrs + ' style="background:#44403c;color:#fef3c7;border:1px solid #78716c;border-radius:8px;padding:7px 10px;font-size:12.5px;margin-left:6px">' + label + '</button>';
+  let html = '';
+  for (const g of Object.keys(FC_GOODS)) {
+    const G = FC_GOODS[g];
+    const avg = fcAvgPrice(g), p = fcPrice(town, g);
+    const col = p < avg - 0.7 ? '#4ade80' : p > avg + 0.7 ? '#f87171' : '#fef3c7';
+    const have = F.cargo[g], room = fcCapacity() - fcCargoCount();
+    const s5 = Math.min(5, have), b5 = Math.min(5, room);
+    let row = '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">' +
+      '<span style="font-size:12.5px">sell at <b>' + fcPayAt(town, g) + '💰</b>' +
+      (have ? '' : ' <i style="color:#78716c">(none aboard)</i>') + '</span><span>' +
+      (have ? btn('data-sell="' + g + '" data-n="1"', '1') : '') +
+      (have > 1 ? btn('data-sell="' + g + '" data-n="' + s5 + '"', s5) : '') +
+      (have > 1 ? btn('data-sell="' + g + '" data-n="' + have + '"', 'all') : '') + '</span></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">' +
+      '<span style="font-size:12.5px">buy at <b>' + fcCostAt(town, g) + '💰</b>' +
+      (room ? '' : ' <i style="color:#78716c">(hold full)</i>') + '</span><span>' +
+      (room ? btn('data-buy="' + g + '" data-n="1"', '1') : '') +
+      (room > 1 ? btn('data-buy="' + g + '" data-n="' + b5 + '"', b5) : '') +
+      (room > 1 ? btn('data-buy="' + g + '" data-n="' + room + '"', 'fill') : '') + '</span></div>';
+    html += '<div class="relicCard" style="margin:6px 0;padding:8px 12px;cursor:default"><b>' + G.ico + ' ' + G.name +
+      ' — <span style="color:' + col + '">price ' + p + '💰</span></b>' +
+      ' <small style="display:inline;color:#a8a29e">· country average ' + avg.toFixed(1) + ' · you carry ' + have + '</small>' +
+      '<small style="margin-top:2px">' + G.perk + '</small>' + row + '</div>';
+  }
+  /* the wainwright: the yard mends slowly for free; gold mends NOW. Health, visible. */
+  const missing = fcAliveWagons().reduce((a, w) => a + (w.maxHp - w.hp), 0);
+  const repCost = Math.ceil(missing / 12);
+  const wagRows = F.wagons.map(w => {
+    const pct = w.dead ? 0 : w.hp / w.maxHp;
+    const nm = w.type === 'cargo' ? '📦 Cargo' : w.type === 'granary' ? '🌾 Granary'
+             : w.type === 'forge' ? '⚒️ Forge' : w.type === 'shrine' ? '⛪ Shrine' : '🐂 Wagon';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">'
+      + '<span style="width:88px;font-size:12px">' + nm + '</span>'
+      + '<div style="flex:1;height:8px;background:#44403c;border-radius:5px;overflow:hidden">'
+      + '<div style="width:' + Math.round(pct * 100) + '%;height:100%;background:'
+      + (w.dead ? '#450a0a' : pct > 0.6 ? '#4ade80' : pct > 0.3 ? '#fbbf24' : '#f87171') + '"></div></div>'
+      + '<span style="font-size:11.5px;color:#a8a29e;width:66px;text-align:right">'
+      + (w.dead ? 'LOST' : Math.round(w.hp) + '/' + w.maxHp) + '</span></div>';
+  }).join('');
+  html += '<div class="relicCard" style="margin:6px 0;padding:8px 12px;cursor:default"><b>🔧 The wainwright — wagon health</b>'
+    + wagRows
+    + '<small style="margin-top:5px">the yard mends ~1.5 hp/s free while the wagons stand in any town</small>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">'
+    + '<span style="font-size:12.5px">' + (missing < 1 ? 'the wagons are sound' : Math.round(missing) + ' hp of damage') + '</span>'
+    + (missing >= 1 ? '<span>' + btn('data-repair="1"', 'mend all NOW — ' + repCost + '💰') + '</span>' : '') + '</div></div>';
+  $('fcTradeRows').innerHTML = html;
+  $('fcTrade').style.display = 'block';
+  $('fcTrade').dataset.town = town.id;
+}
+$('fcTradeClose').onclick = () => { $('fcTrade').style.display = 'none'; };
+$('fcTradeRows').addEventListener('click', e => {
+  const b = e.target.closest('button[data-sell],button[data-buy],button[data-repair]'); if (!b || !S.fc) return;
+  const F = S.fc;
+  const town = F.towns.find(t => t.id == $('fcTrade').dataset.town); if (!town) return;
+  const n = Math.max(1, +b.dataset.n || 1);
+  if (b.dataset.sell) {
+    const g = b.dataset.sell;
+    const sellN = Math.min(n, F.cargo[g]);
+    if (!sellN) return;
+    const earned = fcSellRevenue(town, g, sellN);
+    town.price[g] = Math.max(1, town.price[g] - 0.5 * sellN);
+    F.cargo[g] -= sellN; F.gold += earned; F.trades++;
+    sfx('claim');
+    toast('💰 Sold ' + sellN + ' ' + FC_GOODS[g].ico + ' for ' + earned + '💰 (total ' + Math.round(F.gold) + '/' + F.target + ')', 'good');
+    logEvent('💰 ' + town.name + ': sold ' + sellN + ' ' + FC_GOODS[g].name + ' (+' + earned + '💰)');
+  } else if (b.dataset.buy) {
+    const g = b.dataset.buy;
+    const room = fcCapacity() - fcCargoCount();
+    let buyN = Math.min(n, room);
+    while (buyN > 0 && fcBuyCost(town, g, buyN) > F.gold) buyN--;
+    if (buyN <= 0) return toast('No room or coin', 'bad');
+    const cost = fcBuyCost(town, g, buyN);
+    F.cargo[g] += buyN; F.gold -= cost;
+    town.price[g] += 0.5 * buyN;
+    F.trades++;
+    toast('📦 Bought ' + buyN + ' ' + FC_GOODS[g].ico + ' for ' + cost + '💰 — sell where the number is red', 'good');
+    logEvent('📦 ' + town.name + ': bought ' + buyN + ' ' + FC_GOODS[g].name);
+  } else if (b.dataset.repair) {
+    const missing = fcAliveWagons().reduce((a, w) => a + (w.maxHp - w.hp), 0);
+    const repCost = Math.ceil(missing / 12);
+    if (F.gold < repCost) return toast('Not enough gold for the wainwright', 'bad');
+    F.gold -= repCost;
+    for (const w of fcAliveWagons()) w.hp = w.maxHp;
+    sfx('claim');
+    toast('🔧 Every wagon mended (−' + repCost + '💰)', 'good');
+    logEvent('🔧 ' + town.name + ': wagons mended (−' + repCost + '💰)');
+  }
+  fcOpenTrade(town);   // refresh with new prices
+});
 function fcTrailAt(d) {
   const T = S.fc.trail;
   if (!T.length) return { x: 0, y: 0 };
@@ -1980,11 +2355,20 @@ function fcWagonLost(w) {
   w.dead = true;
   fcPin('loss', w.x, w.y);
   sfx('breach');
-  if (w.type === 'people') {
-    F.souls -= w.souls; F.morale = Math.max(0, F.morale - 15);
-    banner('💔 A WAGON OF SOULS IS LOST', 4000);
-    logEvent('💔 A people-wagon destroyed — ' + w.souls + ' souls lost (' + F.souls + ' remain)');
-    fabSay('A wagon is lost. ' + F.souls + ' souls remain.');
+  if (w.type === 'cargo') {
+    F.morale = Math.max(0, F.morale - 15);
+    const cap = fcCapacity(), total = fcCargoCount();
+    if (total > cap) {
+      let over = total - cap;
+      for (const g of Object.keys(F.cargo)) {
+        if (over <= 0) break;
+        const cut = Math.min(F.cargo[g], over);
+        F.cargo[g] -= cut; over -= cut;
+      }
+    }
+    banner('💥 A CARGO WAGON IS LOST — THE GOODS SPILL', 4000);
+    logEvent('💥 Cargo wagon destroyed — the load spills into the mud');
+    fabSay('A cargo wagon is lost.');
   } else {
     F.morale = Math.max(0, F.morale - 10);
     const nm = w.type === 'granary' ? 'Granary — hunger will bite twice as hard'
@@ -1994,7 +2378,7 @@ function fcWagonLost(w) {
     logEvent('💥 The ' + nm);
     fabSay('The ' + w.type + ' wagon is lost.');
   }
-  if (!fcHas('people')) { S.fc.lostReason = 'souls'; endGame(false); }
+  if (!fcHas('cargo')) { S.fc.lostReason = 'cargo'; endGame(false); }
 }
 function fcHaltToggle() {
   const F = S.fc; if (!F) return;
@@ -2003,7 +2387,7 @@ function fcHaltToggle() {
     F.ringC = fcTrailAt(F.head);
     sfx('front');
     banner('⛺ CIRCLE UP — the wagons form the ring', 3000);
-    logEvent('⛺ Halted — wagons circling (' + Math.round(fcTailD() - F.pursuit) + ' m of road banked)');
+    logEvent('⛺ Halted — wagons circling');
     fabSay('Circle the wagons.');
     fcPin('camp', F.ringC.x, F.ringC.y);
   } else {
@@ -2020,6 +2404,38 @@ function fcSpawn(type, x, y, extra) {
     slideDir: 1, blockT: 0, slideT: 0, ...extra };
   S.enemies.push(e); return e;
 }
+const jit2 = r => (Math.random() - 0.5) * 2 * r;
+/* v0.18 BANDIT COUNTRY — camps seed the map; lawless towns get a shadowing camp */
+function fcMakeCamps(F, n) {
+  const camps = [];
+  const ok = (x, y) => Math.hypot(x, y) > 150 &&
+    F.towns.every(t => Math.hypot(t.x - x, t.y - y) > 115) &&
+    camps.every(c => Math.hypot(c.x - x, c.y - y) > 140);
+  for (let i = 0; i < n; i++) {
+    let best = null, bestScore = -1;
+    for (let k = 0; k < 70; k++) {
+      const r = 200 + Math.random() * 480, a = Math.random() * Math.PI * 2;
+      const x = Math.cos(a) * r, y = Math.sin(a) * r;
+      if (!ok(x, y)) continue;
+      const score = camps.length ? Math.min(...camps.map(c => Math.hypot(c.x - x, c.y - y))) : 1e9;
+      if (score > bestScore) { bestScore = score; best = { x, y }; }
+    }
+    if (best) camps.push({ id: camps.length, x: best.x, y: best.y, dead: false, risky: false,
+                           nextAt: S.t + 20 + Math.random() * 30 });
+  }
+  for (const t of F.towns) if (t.lawless) {
+    const a = Math.random() * Math.PI * 2, r = 130 + Math.random() * 70;
+    camps.push({ id: camps.length, x: t.x + Math.cos(a) * r, y: t.y + Math.sin(a) * r,
+                 dead: false, risky: true, nextAt: S.t + 15 + Math.random() * 20 });
+  }
+  return camps;
+}
+function fcCampGuards(c) {
+  for (let i = 0; i < 2; i++) {
+    const e = fcSpawn('grunt', c.x + (i ? 9 : -9), c.y + 6, { fcFree: 1 });
+    e.rst = 'post'; e.campId = c.id; e.guard = 1; e.detT = 0;
+  }
+}
 function fcGen() {
   const F = S.fc;
   const dx = S.player.x - F.lastGenPos.x, dy = S.player.y - F.lastGenPos.y;
@@ -2029,10 +2445,10 @@ function fcGen() {
   F.lastGenPos = { x: S.player.x, y: S.player.y };
   const cx = S.player.x + hx*260, cy = S.player.y + hy*260;
   const jit = r => (Math.random()-0.5) * 2 * r;
-  const nF = 1 + (Math.random() < 0.45 ? 1 : 0);
+  const nF = 3 + (Math.random() < 0.5 ? 1 : 0);
   for (let i = 0; i < nF; i++) {
-    const kind = ['grain','grain','herbs','timber'][Math.floor(Math.random()*4)];
-    F.forage.push({ x: cx + jit(150), y: cy + jit(150), kind });
+    const kind = ['grain','grain','coins','tools','weapons','grain'][Math.floor(Math.random()*6)];
+    F.forage.push({ x: cx + jit(160), y: cy + jit(160), kind });
   }
   const r = Math.random();
   const nA = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
@@ -2066,25 +2482,103 @@ function fcOpenShrine() {
 function fcTick(dt) {
   const F = S.fc; if (!F) return;
   const alive = fcAliveWagons();
-  /* ---- record the trail the people will follow ---- */
-  const T = F.trail, lp = T[T.length-1];
-  const seg = Math.hypot(S.player.x - lp.x, S.player.y - lp.y);
-  if (seg >= 4 && seg <= 250) T.push({ x: S.player.x, y: S.player.y, d: lp.d + seg });
-  while (T.length > 2 && T[1].d < F.pursuit - 80) T.shift();
-  /* ---- the train advances along it ---- */
-  const trailLen = T[T.length-1].d;
+  fcSweep();
+  /* knights sweep the way as they ride — route them where the caravan must go */
+  for (const k of S.knights) {
+    const gx = Math.round(k.x / 40), gy = Math.round(k.y / 40);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) F.scout.add((gx+i) + ',' + (gy+j));
+    if (k.mode === 'riding') {
+      if (!k.circ) k.circ = [];
+      const lc = k.circ[k.circ.length - 1];
+      if (!lc || Math.hypot(k.x - lc[0], k.y - lc[1]) >= 25) k.circ.push([k.x, k.y]);
+    } else if (k.circ && k.circ.length) {
+      /* circuit over: a closed loop sweeps everything inside it — encirclement pays */
+      const c0 = k.circ[0], c1 = k.circ[k.circ.length - 1];
+      if (k.circ.length >= 6 && Math.hypot(c1[0]-c0[0], c1[1]-c0[1]) < 90) {
+        let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+        for (const pt of k.circ) { x0=Math.min(x0,pt[0]); x1=Math.max(x1,pt[0]); y0=Math.min(y0,pt[1]); y1=Math.max(y1,pt[1]); }
+        let n = 0;
+        for (let gx2 = Math.round(x0/40); gx2 <= Math.round(x1/40) && n < 900; gx2++)
+          for (let gy2 = Math.round(y0/40); gy2 <= Math.round(y1/40) && n < 900; gy2++) {
+            const cx2 = gx2*40, cy2 = gy2*40;
+            let inside = false;                            // ray cast
+            for (let a = 0, b = k.circ.length - 1; a < k.circ.length; b = a++) {
+              const P = k.circ[a], Q = k.circ[b];
+              if ((P[1] > cy2) !== (Q[1] > cy2) &&
+                  cx2 < (Q[0]-P[0]) * (cy2-P[1]) / (Q[1]-P[1] || 0.001) + P[0]) inside = !inside;
+            }
+            if (inside) { F.scout.add(gx2 + ',' + gy2); n++; }
+          }
+        if (n >= 4) {
+          sfx('claim');
+          toast('🐴 ' + (k.name||'The knight') + ' closed the circuit — ' + n + ' patches of ground swept inside', 'good');
+          logEvent('🐴 ' + (k.name||'Knight') + ' encircled and swept ' + n + ' patches');
+        }
+      }
+      k.circ = null;
+    }
+  }
+  /* every bandit tramples the swept roads he crosses */
+  for (const e of S.enemies) F.scout.delete(Math.round(e.x/40) + ',' + Math.round(e.y/40));
+  S.enemies = S.enemies.filter(e => !e.gone);
+  /* ---- the caravan drives itself toward YOUR chosen stop, laying its own road ----
+     (your detours and double-backs are yours alone — the oxen keep their line;
+      but they only trot full pace through ground you have personally swept) */
+  const T = F.trail;
+  while (T.length > 2 && T[1].d < F.head - 900) T.shift();
   let spdM = F.morale > 70 ? 1.05 : F.morale < 30 ? 0.85 : 1;
   if (S.t < F.oxUntil) spdM *= 1.12;
-  if (!F.halted && F.breakT <= 0) {
-    const was = F.head;
-    F.head = Math.min(F.head + FC.trainSpd * spdM * dt, trailLen);
-    F.roadDone = Math.max(F.roadDone, F.head - 400);
-    F.waiting = F.head >= trailLen - 0.5;
-    if (F.waiting && S.t > F.waitToastAt && F.pursuit > 0) {
-      F.waitToastAt = S.t + 25;
-      toast('🐂 The train waits for your lead — walk on!', 'bad');
+  F.waiting = !F.dest && !F.halted && S.t >= F.tradeUntil;
+  if (F.waiting && S.t > F.waitToastAt) { F.waitToastAt = S.t + 30;
+    toast('🐂 The caravan awaits your order — tap a town (or the Keep) to set its road', 'bad'); }
+  if (!F.halted && F.breakT <= 0 && F.dest && S.t >= F.tradeUntil) {
+    const lp2 = T[T.length-1];
+    const hx = F._px != null ? F._px : lp2.x, hy = F._py != null ? F._py : lp2.y;
+    const ddx = F.dest.x - hx, ddy = F.dest.y - hy;
+    const dd = Math.hypot(ddx, ddy);
+    if (dd > (F.dest.home ? 34 : 36)) {
+      const probe = { x: hx + ddx/dd*28, y: hy + ddy/dd*28 };
+      const swept = fcScouted(probe);
+      F.unswept = !swept;
+      if (!swept && S.t > F.sweptToastAt) { F.sweptToastAt = S.t + 22;
+        toast('🐂 The oxen balk at unswept dark ahead — run their road for them! (half pace)', 'bad'); }
+      const step = Math.min(FC.trainSpd * spdM * (swept ? 1 : 0.5) * dt, dd);
+      const nx = hx + ddx/dd*step, ny = hy + ddy/dd*step;
+      F._px = nx; F._py = ny;
+      F._pend = (F._pend || 0) + step;
+      F.roadDone += step;
+      if (F._pend >= 2) { T.push({ x: nx, y: ny, d: lp2.d + F._pend }); F._pend = 0; }
+      F.head = T[T.length-1].d + (F._pend || 0);
+    } else {
+      /* arrived */
+      F._pend = 0; F.unswept = false;
+      if (F.dest.home) {
+        const net = F.gold - F.lateFine;
+        if (net >= F.target) { F.dest = null; fcPin('trade', 0, 0); endGame(true); return; }
+        if (S.t > F.waitToastAt) { F.waitToastAt = S.t + 20;
+          toast('🏰 The clerk counts ' + Math.round(net) + '💰 of ' + F.target + ' owed' +
+            (F.lateFine > 0.5 ? ' (fine −' + Math.round(F.lateFine) + ')' : '') + ' — ride out again!', 'bad'); }
+        F.dest = null;
+      } else {
+        const t2 = F.dest;
+        F.dest = null; F.tradeUntil = S.t + 10;
+        if (!F.townsVisited.includes(t2.id)) F.townsVisited.push(t2.id);
+        t2.revealed = true; t2.priced = true;
+        F.morale = Math.min(100, F.morale + 6);
+        sfx('win');
+        banner('🏘️ ' + t2.name.toUpperCase() + ' — THE MARKET OPENS', 3000);
+        logEvent('🏘️ Caravan arrived at ' + t2.name);
+        fabSay(t2.name + '. The market opens.');
+        fcPin('trade', t2.x, t2.y);
+        fcOpenTrade(t2);
+      }
     }
   } else if (F.breakT > 0) F.breakT -= dt;
+  /* markets breathe: prices drift back toward their base (~0.5 per 45 s) */
+  for (const t of F.towns) for (const g of Object.keys(FC_GOODS)) {
+    const d = t.base[g] - t.price[g];
+    if (Math.abs(d) > 0.01) t.price[g] += Math.sign(d) * Math.min(Math.abs(d), dt / 90);
+  }
   if (F.halted) F.ringT = Math.min(FC.ringForm, F.ringT + dt);
   else if (F.ringT > 0) F.ringT = Math.max(0, F.ringT - dt * 1.5);
   /* wagon positions: the file, or the ring */
@@ -2102,62 +2596,84 @@ function fcTick(dt) {
     w.a = Math.atan2(nx.y - w.y, nx.x - w.x);
     ai++;
   }
-  /* ---- the Pursuit ---- */
-  const howl = S.t < F.howlUntil;
-  /* the tide paces the train itself (morale bonus included) plus the creep —
-     no state of grace outruns it; only finishing the road does */
-  const purSpd = FC.trainSpd * spdM + F.creep + (howl ? 0.6 : 0);
-  F.pursuit = Math.min(F.pursuit + purSpd * dt, fcTailD());
-  const buffer = fcTailD() - F.pursuit;
-  const contact = buffer < 6;
-  if (contact) {
-    F.contactT += dt;
-    const rear = alive[alive.length - 1];
-    if (rear) { rear.hp -= FC.contactDps * dt; if (rear.hp <= 0) fcWagonLost(rear); }
-    if (F.contactT > 8) { F.contactT = 0;
-      const pp = fcTrailAt(F.pursuit);
-      fcSpawn('wolf', pp.x, pp.y, { fcFree: 1 });
-      sfx('keep');
-      toast('🐺 They are AT THE WAGONS — drive them off!', 'bad');
+  /* ---- BANDIT COUNTRY (v0.18): no fake tide — camps raise patrols, parties roam,
+          cross your scent, and hunt; the map is alive and avoidance is a tactic ---- */
+  if (S.t >= (F.crumbAt || 0)) {               // the leader's scent trail
+    F.crumbAt = S.t + 2;
+    const lc = F.crumbs[F.crumbs.length - 1];
+    if (!lc || Math.hypot(S.player.x - lc.x, S.player.y - lc.y) > 6)
+      F.crumbs.push({ x: S.player.x, y: S.player.y, t: S.t });
+    while (F.crumbs.length > 130 || (F.crumbs.length && F.crumbs[0].t < S.t - 170)) F.crumbs.shift();
+  }
+  for (const c of F.camps) {                   // camps raise patrols
+    if (c.dead || S.t < c.nextAt || S.t < S.spawnPauseUntil) continue;
+    c.nextAt = S.t + (c.risky ? 34 : 48) + Math.random() * 22;
+    const out = S.enemies.filter(e2 => e2.campId === c.id && !e2.guard).length;
+    if (out >= (c.risky ? 5 : 3)) continue;
+    const n = 2 + (Math.random() < 0.4 ? 1 : 0);
+    const wx = jit2(650), wy = jit2(650);
+    for (let i = 0; i < n; i++) {
+      const e = fcSpawn(Math.random() < 0.3 ? 'wolf' : 'grunt', c.x + jit2(14), c.y + jit2(14), { fcFree: 1 });
+      e.rst = 'roam'; e.campId = c.id; e.wx = wx + jit2(30); e.wy = wy + jit2(30); e.detT = 0;
     }
-  } else F.contactT = 0;
-  if (contact && S.t - F.lastBesetSay > 45) { F.lastBesetSay = S.t;
-    banner('🐺 THE TIDE HAS CAUGHT THE TRAIN', 3500);
-    logEvent('🐺 The pursuit made contact with the rear wagon');
-    fabSay('They are at the wagons!'); }
-  /* ---- chasers track the trail ---- */
-  if (S.t >= F.nextChaserAt && S.t >= S.spawnPauseUntil) {
-    F.nextChaserAt = S.t + 22 + Math.random() * 13;
-    const type = Math.random() < 0.55 ? 'wolf' : 'grunt';
-    const pp = fcTrailAt(F.pursuit);
-    fcSpawn(type, pp.x + (Math.random()-.5)*20, pp.y + (Math.random()-.5)*20,
-      { fcChaser: 1, trailD: F.pursuit });
   }
-  /* ---- hunting parties converge ahead ---- */
-  if (F.head >= F.huntAt) {
-    F.huntAt += FC.huntEvery;
-    const hp0 = fcTrailAt(Math.min(trailLen, F.head + 100));
-    const side = Math.random() < 0.5 ? 1 : -1;
-    const hx = hp0.x + side * 180, hy = hp0.y + (Math.random()-.5) * 220;
-    fcSpawn('brute', hx, hy, { fcFree: 1, speed: 1.6 });
-    fcSpawn('grunt', hx + 14, hy, { fcFree: 1 });
-    fcSpawn('grunt', hx - 14, hy, { fcFree: 1 });
-    sfx('front');
-    banner('⚠️ HUNTING PARTY — ' + compass(Math.atan2(hy - S.player.y, hx - S.player.x)) + '!', 3500);
-    logEvent('⚠️ A hunting party closes on the train');
-    fabSay('A hunting party, ' + fabSpoken(Math.atan2(hy - S.player.y, hx - S.player.x)) + '. Intercept them.');
+  if (S.t >= F.roamAt && S.t >= S.spawnPauseUntil) {   // wanderers off the rim
+    F.roamAt = S.t + 60 + Math.random() * 30;
+    const a = Math.random() * Math.PI * 2;
+    const sx = Math.cos(a) * 800, sy = Math.sin(a) * 800;
+    for (let i = 0; i < 2; i++) {
+      const e = fcSpawn(Math.random() < 0.35 ? 'wolf' : 'grunt', sx + i * 16, sy, { fcFree: 1 });
+      e.rst = 'roam'; e.rim = 1; e.wx = -sx * (0.7 + Math.random() * 0.5); e.wy = -sy * (0.7 + Math.random() * 0.5); e.detT = 0;
+    }
   }
+  {                                            // burning a camp: stand at the fire, guards dead
+    let atCamp = null;
+    for (const c of F.camps) if (!c.dead && Math.hypot(c.x - S.player.x, c.y - S.player.y) < 15) { atCamp = c; break; }
+    if (atCamp && !S.enemies.some(e2 => e2.campId === atCamp.id && e2.guard && e2.hp > 0 &&
+                                        Math.hypot(e2.x - atCamp.x, e2.y - atCamp.y) < 50)) {
+      F.burnT += dt;
+      if (F.burnT >= 4) {
+        F.burnT = 0; atCamp.dead = true; F.burned++;
+        const loot = 12 + Math.floor(Math.random() * 10) + (atCamp.risky ? 6 : 0);
+        F.gold += loot; F.renown += 3;
+        sfx('warcry'); if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
+        banner('🔥 BANDIT CAMP BURNED — +' + loot + '💰', 3500);
+        logEvent('🔥 Camp burned (+' + loot + '💰 loot)');
+        fabSay('The camp burns. ' + loot + ' gold in their chests.');
+      }
+    } else F.burnT = 0;
+  }
+  const hunters = S.enemies.filter(e2 => e2.rst === 'scent' || e2.rst === 'alert');
+  F.hunters = hunters.length;
+  const contact = S.enemies.some(e2 => alive.some(w2 => dist2(e2, w2) < 14 * 14));
+  const huntedNear = hunters.some(e2 => alive.some(w2 => dist2(e2, w2) < 130 * 130));
   /* ---- the country ahead ---- */
   fcGen();
+  if (F.roadDone >= (F.dropMark || 0)) {       // the road itself offers little detours
+    F.dropMark = (F.dropMark || 0) + 150;
+    const hp4 = fcTrailAt(F.head);
+    const dir = F.dest ? Math.atan2(F.dest.y - hp4.y, F.dest.x - hp4.x) : Math.random() * Math.PI * 2;
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const kind = ['grain', 'coins', 'tools', 'weapons', 'coins'][Math.floor(Math.random() * 5)];
+    const ahead = 90 + Math.random() * 120, off = side * (50 + Math.random() * 110);
+    F.forage.push({ x: hp4.x + Math.cos(dir) * ahead - Math.sin(dir) * off,
+                    y: hp4.y + Math.sin(dir) * ahead + Math.cos(dir) * off, kind });
+  }
   for (let i = F.forage.length - 1; i >= 0; i--) {
     const f = F.forage[i];
     if (Math.hypot(f.x - S.player.x, f.y - S.player.y) < 20) {
-      if (f.kind === 'grain') { S.supply += 30; toast('🌾 Foraged grain (+30)', 'good'); }
-      else if (f.kind === 'herbs') { for (const w of alive) w.hp = Math.min(w.maxHp, w.hp + w.maxHp*0.10);
-        toast('🌿 Healing herbs — every wagon mended 10%', 'good'); }
-      else { let weak = null; for (const w of alive) if (!weak || w.hp/w.maxHp < weak.hp/weak.maxHp) weak = w;
-        if (weak) weak.hp = Math.min(weak.maxHp, weak.hp + 60);
-        toast('🪵 Timber — the weakest wagon patched (+60)', 'good'); }
+      const room2 = fcCapacity() - fcCargoCount();
+      if (f.kind === 'grain') {
+        const got2 = Math.min(4, Math.max(0, room2));
+        if (got2) { F.cargo.grain += got2; toast('🌾 Wild grain (+' + got2 + ' to the hold)', 'good'); }
+        else toast('🌾 Wild grain — but the hold is full', 'bad'); }
+      else if (f.kind === 'coins') { F.gold += 10; toast('💰 A dropped purse (+10💰)', 'good'); }
+      else if (f.kind === 'tools') {
+        if (room2) { F.cargo.tools += 1; toast('⚒️ An abandoned toolchest (+1)', 'good'); }
+        else toast('⚒️ A toolchest — but the hold is full', 'bad'); }
+      else if (f.kind === 'weapons') {
+        if (room2) { F.cargo.weapons += 1; toast('⚔️ A cache of arms (+1)', 'good'); }
+        else toast('⚔️ A cache of arms — but the hold is full', 'bad'); }
       sfx('claim');
       F.forage.splice(i, 1);
     }
@@ -2187,46 +2703,71 @@ function fcTick(dt) {
     if (touched) F.morale = Math.min(100, F.morale + 0.5 * dt);
   }
   /* ---- militia + repairs ---- */
-  if (F.armed) {
-    S.supply -= 0.25 * dt;
-    if (S.supply <= 0) { S.supply = 0; F.armed = false; toast('🗡️ The militia stands down — no grain to feed them', 'bad'); }
-    else {
-      const mDps = 8 * (fcHas('forge') ? 1.5 : 1);
-      for (const w of alive) {
-        let tgt = null, td_ = 1e12;
-        for (const e of S.enemies) { const dd = (e.x-w.x)**2 + (e.y-w.y)**2; if (dd < td_) { td_ = dd; tgt = e; } }
-        if (tgt && td_ < 18*18) tgt.hp -= mDps * dt;
-      }
+  {
+    /* the crew always fights back — WITH weapons they fight well, and each skirmish burns them */
+    let fighting = 0;
+    const armed = F.cargo.weapons > 0;
+    const dps = (armed ? 9 : 2) * (fcHas('forge') ? 1.5 : 1);
+    for (const w of alive) {
+      let tgt = null, td_ = 1e12;
+      for (const e of S.enemies) { const dd = (e.x-w.x)**2 + (e.y-w.y)**2; if (dd < td_) { td_ = dd; tgt = e; } }
+      if (tgt && td_ < 18*18) { tgt.hp -= dps * dt; fighting++; }
     }
+    if (fighting && armed) {
+      F.wepBurn += dt;
+      if (F.wepBurn >= 6) { F.wepBurn = 0; F.cargo.weapons = Math.max(0, F.cargo.weapons - 1);
+        if (F.cargo.weapons === 0) { sfx('breach');
+          toast('⚔️ The last weapon breaks — the crew fights with fists and pitchforks!', 'bad');
+          logEvent('⚔️ Out of weapons — crew defense collapses');
+          fabSay('We are out of weapons!'); }
+        else if (F.cargo.weapons <= 2) toast('⚔️ Weapons running low: ' + F.cargo.weapons + ' left', 'bad'); }
+    }
+  }
+  if (fcPerk('tools')) for (const w of alive) w.hp = Math.min(w.maxHp, w.hp + 0.5 * dt);
+  /* the wainwright's yard: wagons standing inside any town mend free */
+  for (const w of alive) if (w.hp < w.maxHp && F.towns.some(t2 => Math.hypot(t2.x - w.x, t2.y - w.y) < 70)) {
+    w.hp = Math.min(w.maxHp, w.hp + 1.5 * dt);
+    if (!F.yardSaid || S.t - F.yardSaid > 150) { F.yardSaid = S.t;
+      toast('🔧 The wainwright\'s yard patches the wagons while you trade', 'good'); }
   }
   for (const w of alive) if (w.hp < w.maxHp && Math.hypot(w.x - S.player.x, w.y - S.player.y) < 25) {
     const rate = (F.halted && F.ringT > 6) ? 6 : (fcHas('forge') ? 2 : 0);
     w.hp = Math.min(w.maxHp, w.hp + rate * dt);
   }
   /* ---- hunger & morale ---- */
-  const pplWagons = alive.filter(w => w.type === 'people').length;
-  const drain = pplWagons * (fcHas('granary') ? 0.6 : 1.2) / 60;
-  S.supply = Math.max(0, S.supply - drain * dt);
+  const drain = (fcHas('granary') ? 0.5 : 1.0) * 2 / 60;   // the crew eats GRAIN from the hold; the Granary halves it
+  F.grainAcc = (F.grainAcc || 0) + drain * dt;
+  if (F.grainAcc >= 1 && F.cargo.grain > 0) { F.cargo.grain--; F.grainAcc -= 1; }
   let dM = 0;
-  if (S.supply <= 0) dM -= 3 / 60;
+  if (F.cargo.grain <= 0) dM -= 3 / 60;
   else dM += 0.2 / 60;
   if (alive.some(w => Math.hypot(w.x - S.player.x, w.y - S.player.y) < 40)) dM += 1.5 / 60;
   if (fcHas('shrine')) dM += 0.6 / 60;
-  if (buffer < 120) dM -= 1.5 / 60;
+  if (huntedNear) dM -= 1.5 / 60;
   if (contact) dM -= 2 / 60;
-  if (howl) dM -= 1 / 60;
   if (F.waiting && !F.halted) dM -= 1 / 60;
   F.morale = clamp(F.morale + dM * dt, 0, 100);
   if (F.morale <= 0) { F.lostReason = 'morale'; endGame(false); return; }
-  /* ---- milestones ---- */
-  const q = F.road / 4;
-  if (F.roadDone >= q * F.mileQ && F.mileQ <= 3) {
-    F.morale = Math.min(100, F.morale + 8); F.mileQ++;
-    sfx('win');
-    banner('🏁 ' + (F.roadDone/1000).toFixed(1) + ' KM BEHIND THEM — THE PEOPLE TAKE HEART', 3500);
-    logEvent('🏁 Milestone: ' + (F.roadDone/1000).toFixed(1) + ' km — morale rises');
-    fabSay((F.roadDone/1000).toFixed(1) + ' kilometers. The people take heart.');
+  /* ---- the king's clock: dusk starts a FINE, not a guillotine (0.15💰/s late);
+          at half again past dusk his patience ends ---- */
+  const left = F.deadline - S.t;
+  if (left < 0) {
+    F.lateFine = -left * 0.15;
+    if (S.t >= F.hardEnd) { F.lostReason = 'patience'; endGame(false); return; }
+    if (!F.warnedLate) { F.warnedLate = true;
+      sfx('keep');
+      banner('🌆 DUSK HAS FALLEN — THE FINE GROWS (0.15💰/s)', 4500);
+      logEvent('🌆 Past dusk — the king\'s fine accrues');
+      fabSay('Dusk has fallen. Every moment now costs gold.'); }
   }
+  if (!F.warnedHalf && left > 0 && left < F.deadline * 0.5) { F.warnedHalf = true;
+    banner('⏳ HALF THE DAY IS SPENT — ' + Math.round(F.gold) + '/' + F.target + '💰', 3500);
+    fabSay('Half the day is spent. ' + Math.round(F.gold) + ' gold of ' + F.target + '.'); }
+  if (!F.warnedDusk && left > 0 && left < F.deadline * 0.22) { F.warnedDusk = true;
+    sfx('keep');
+    banner('🌆 DUSK COMES — RIDE FOR HOME (late pays a fine)', 4000);
+    logEvent('🌆 Dusk closes in (' + fmtT(left) + ' left)');
+    fabSay('Dusk comes. Ride for home.'); }
   /* ---- events of the road ---- */
   if (S.t >= F.eventAt && !S.draftOpen) {
     F.eventAt = S.t + 140 + Math.random() * 40;
@@ -2234,43 +2775,56 @@ function fcTick(dt) {
     if (r < 0.45 && !F.straggler) {
       const a = Math.random() * Math.PI * 2, rr = 150 + Math.random() * 70;
       F.straggler = { x: S.player.x + Math.cos(a)*rr, y: S.player.y + Math.sin(a)*rr,
-        ttl: 100, n: 3 + Math.floor(Math.random() * 4) };
+        ttl: 100, n: 2 };
       sfx('event');
-      banner('👨‍👩‍👧 STRAGGLERS — ' + fmtT(100), 3500);
-      toast('👨‍👩‍👧 A family of ' + F.straggler.n + ' hides ' + Math.round(rr) + ' m to the ' +
-        compass(a) + ' — reach them before the wolves do!', 'bad');
-      logEvent('👨‍👩‍👧 Stragglers sighted (' + F.straggler.n + ' souls)');
-      fabSay('Stragglers! A family hides ' + fabSpoken(a) + '. Run.');
+      banner('🧺 A STRANDED PEDDLER — ' + fmtT(100), 3500);
+      toast('🧺 A peddler with a broken cart, ' + Math.round(rr) + ' m to the ' +
+        compass(a) + ' — reach him before the wolves do and he\'ll share his load!', 'bad');
+      logEvent('🧺 Stranded peddler sighted');
+      fabSay('A stranded peddler, ' + fabSpoken(a) + '. Run to him.');
     } else if (r < 0.75) {
-      const hp2 = fcTrailAt(Math.min(trailLen, F.head + 60));
+      const hp2 = { x: (F._px != null ? F._px : S.player.x), y: (F._py != null ? F._py : S.player.y) };
       F.shrineAt = { x: hp2.x + (Math.random()-.5)*160, y: hp2.y + (Math.random()-.5)*160, ttl: 120 };
       sfx('event');
       toast('⛪ A wayside shrine stands ' + Math.round(Math.hypot(F.shrineAt.x-S.player.x, F.shrineAt.y-S.player.y)) + ' m off — touch it for a blessing', 'good');
       logEvent('⛪ Wayside shrine sighted');
     } else {
-      F.howlUntil = S.t + 45;
-      sfx('rout');
-      banner('🐺 THE HORDE HOWLS — THEY SMELL THE TRAIL', 4000);
-      logEvent('🐺 The Howl — pursuit surges for 45 s');
-      fabSay('They howl. They are coming faster. Push!');
+      /* word of a rich caravan spreads — riders come to cut the road ahead */
+      const ha = Math.random() * Math.PI * 2;
+      const hx3 = Math.cos(ha) * 800, hy3 = Math.sin(ha) * 800;
+      const cut = fcTrailAt(F.head), cx3 = cut.x + jit2(120), cy3 = cut.y + jit2(120);
+      for (let i = 0; i < 3; i++) {
+        const e = fcSpawn(i === 0 ? 'raider' : 'grunt', hx3 + i * 14, hy3, { fcFree: 1 });
+        e.rst = 'roam'; e.rim = 1; e.wx = cx3; e.wy = cy3; e.detT = 0;
+      }
+      sfx('front');
+      banner('🏴 WORD SPREADS — RIDERS MAKE FOR THE ROAD', 4000);
+      logEvent('🏴 A party rides to cut the road');
+      fabSay('Riders make for the road ahead. Word of our gold has spread.');
     }
   }
   if (F.straggler) {
     F.straggler.ttl -= dt;
     if (Math.hypot(F.straggler.x - S.player.x, F.straggler.y - S.player.y) < 25) {
-      F.souls += F.straggler.n; F.rescues++; F.renown += 2; F.soulsGained = (F.soulsGained||0) + F.straggler.n;
-      F.morale = Math.min(100, F.morale + 6);
-      const pw = alive.find(w => w.type === 'people'); if (pw) pw.souls += F.straggler.n;
+      F.rescues++; F.renown += 2;
+      F.morale = Math.min(100, F.morale + 4);
+      const gk = ['tools', 'weapons'];
+      const room = Math.max(0, fcCapacity() - fcCargoCount());
+      const got = [];
+      for (let i = 0; i < Math.min(2, room); i++) {
+        const g = gk[Math.floor(Math.random()*gk.length)];
+        F.cargo[g]++; got.push(FC_GOODS[g].ico);
+      }
       sfx('claim');
-      banner('👨‍👩‍👧 ' + F.straggler.n + ' SOULS SAVED — THEY RUN BESIDE YOU', 3500);
-      logEvent('👨‍👩‍👧 ' + F.straggler.n + ' stragglers saved (' + F.souls + ' souls now follow)');
-      fabSay(F.straggler.n + ' souls saved. They run beside you.');
+      banner('🧺 THE PEDDLER IS SAVED' + (got.length ? ' — ' + got.join('') + ' SHARED' : ''), 3500);
+      logEvent('🧺 Peddler rescued' + (got.length ? ' — he shares ' + got.join(' ') : ' (no room in the hold)'));
+      fabSay('The peddler is saved.' + (got.length ? ' He shares his goods.' : ''));
       fcPin('save', F.straggler.x, F.straggler.y);
       F.straggler = null;
     } else if (F.straggler.ttl <= 0) {
       F.morale = Math.max(0, F.morale - 5);
-      toast('🕯 The stragglers were not reached in time…', 'bad');
-      logEvent('🕯 The stragglers were lost to the dark');
+      toast('🕯 The peddler was not reached in time…', 'bad');
+      logEvent('🕯 The peddler was lost to the dark');
       F.straggler = null;
     }
   }
@@ -2281,30 +2835,90 @@ function fcTick(dt) {
       F.shrineAt = null; fcOpenShrine();
     } else if (F.shrineAt.ttl <= 0) F.shrineAt = null;
   }
-  /* ---- the Haven ---- */
-  if (!F.havenPos && F.roadDone / F.road > 0.9) {
-    const lp2 = T[T.length-1], pl = T[Math.max(0, T.length-6)];
-    const hd = Math.hypot(lp2.x - pl.x, lp2.y - pl.y) || 1;
-    F.havenPos = { x: lp2.x + (lp2.x - pl.x)/hd * 220, y: lp2.y + (lp2.y - pl.y)/hd * 220 };
-    banner('🏡 ' + F.havenName.toUpperCase() + ' IS IN SIGHT', 4000);
-    fabSay(F.havenName + ' is in sight. Almost home.');
-  }
-  if (F.roadDone >= F.road) { endGame(true); return; }
 }
 function fcEnemies(dt) {
   const F = S.fc; if (!F) return;
   const alive = fcAliveWagons();
   const shelter = (F.ringT / FC.ringForm) > 0.75;
+  const cN = F.crumbs ? F.crumbs.length : 0;   // a running leader is LOUD
+  const moving = cN > 5 && Math.hypot(F.crumbs[cN-1].x - F.crumbs[cN-6].x,
+                                      F.crumbs[cN-1].y - F.crumbs[cN-6].y) > 30;
   for (const e of S.enemies) {
-    /* chasers run up the trail — they have your scent */
-    if (e.fcChaser && !e.fcFree) {
-      e.trailD += e.speed * dt;
-      const p = fcTrailAt(e.trailD);
-      e.x = p.x; e.y = p.y;
-      const tail = fcTailD();
-      if (e.trailD >= tail - 45 || alive.some(w => dist2(e, w) < 60*60) || dist2(e, S.player) < 45*45)
-        e.fcFree = 1;
-      continue;
+    /* towns and the Keep are safe ground — raiders will not enter the light */
+    let z = null;
+    if (e.x*e.x + e.y*e.y < 85*85) z = { x: 0, y: 0 };
+    else for (const t of F.towns) if ((e.x-t.x)**2 + (e.y-t.y)**2 < t.safeR*t.safeR) { z = t; break; }
+    if (z) { const dz = Math.hypot(e.x-z.x, e.y-z.y) || 1;
+      e.x += (e.x-z.x)/dz * e.speed * dt; e.y += (e.y-z.y)/dz * e.speed * dt; continue; }
+    /* v0.18 roaming bandits: post/roam → scent → alert. They live their own lives
+       until they cross your tracks, spot you, or take a blow. */
+    if (e.rst && e.rst !== 'alert') {
+      if (e.hp < e.maxHp - 0.5) e.rst = 'alert';   // a blow answers all questions
+      else {
+        e.sniffAt = e.sniffAt || 0;
+        if (S.t >= e.sniffAt) {                    // smelling the ground
+          e.sniffAt = S.t + 0.6;
+          let hit = 0;
+          for (const cb of F.crumbs) if (S.t - cb.t < 150 && (e.x-cb.x)**2 + (e.y-cb.y)**2 < 20*20) { hit = 1; break; }
+          if (!hit) {
+            const T2 = F.trail;
+            for (let i2 = T2.length - 1; i2 >= 0 && T2[i2].d > F.head - 350; i2--)
+              if ((e.x-T2[i2].x)**2 + (e.y-T2[i2].y)**2 < 20*20) { hit = 2; break; }
+          }
+          if (hit && e.rst !== 'scent') {
+            e.rst = 'scent'; e.scentT = 0; e.huntWagons = (hit === 2);
+            if (S.t - F.lastScentSay > 24) { F.lastScentSay = S.t;
+              sfx('front');
+              toast('🏴 A bandit party found ' + (hit === 2 ? 'the wagon ruts' : 'your tracks') + ' — they hunt!', 'bad');
+              logEvent('🏴 Bandits picked up the scent');
+              fabSay('They have our scent.'); }
+          }
+        }
+        /* eyes and ears: close bandits MAY notice you — not always. Wait them out, or slip around. */
+        let bw = null, bd = 1e12;
+        for (const ww of alive) { const dd2 = dist2(e, ww); if (dd2 < bd) { bd = dd2; bw = ww; } }
+        const dp2 = dist2(e, S.player);
+        const isYou = dp2 < bd, td3 = Math.sqrt(Math.min(dp2, bd));
+        const seeR = isYou ? (moving ? 75 : 55) : 60;
+        if (td3 < seeR) {
+          e.detT = (e.detT || 0) + dt * (1.3 - td3 / seeR) * (td3 < 20 ? 3 : 1);
+          if (e.detT > 2) {
+            e.detT = -5;                           // a long look…
+            if (Math.random() < 0.72) {
+              e.rst = 'alert';
+              if (S.t - F.lastSpotSay > 16) { F.lastSpotSay = S.t;
+                sfx('keep');
+                toast('🏴 SPOTTED — bandits turn ' + (isYou ? 'toward YOU' : 'toward the wagons') + '!', 'bad');
+                logEvent('🏴 Bandits spotted the ' + (isYou ? 'General' : 'caravan')); }
+            }
+          }
+        } else e.detT = Math.max(0, (e.detT || 0) - dt);
+        if (e.rst === 'scent') {                   // tracking the scent to its owner
+          const q = e.huntWagons && alive.length ? fcTrailAt(F.head) : S.player;
+          const dq = Math.hypot(q.x - e.x, q.y - e.y) || 1;
+          if (dq < 55) e.rst = 'alert';
+          else {
+            e.scentT = (e.scentT || 0) + dt;
+            if (dq > 330 && e.scentT > 25) { e.rst = 'roam'; e.wx = e.x + jit2(500); e.wy = e.y + jit2(500); }
+            else {
+              e.x += (q.x - e.x)/dq * e.speed * 0.8 * dt;
+              e.y += (q.y - e.y)/dq * e.speed * 0.8 * dt;
+              continue;
+            }
+          }
+        }
+        if (e.rst === 'post') continue;            // guards keep their fire
+        if (e.rst === 'roam') {                    // amble on; rim wanderers walk off the map
+          const dw = Math.hypot((e.wx||0) - e.x, (e.wy||0) - e.y) || 1;
+          if (dw < 26) {
+            if (e.rim) { e.gone = 1; continue; }
+            e.wx = e.x + jit2(460); e.wy = e.y + jit2(460);
+          }
+          e.x += ((e.wx - e.x)/dw) * e.speed * 0.5 * dt;
+          e.y += ((e.wy - e.y)/dw) * e.speed * 0.5 * dt;
+          continue;
+        }
+      }
     }
     /* the General's aura pins and is mutual, as everywhere */
     const dp = dist(e, S.player);
@@ -2314,7 +2928,12 @@ function fcEnemies(dt) {
     for (const ww of alive) { const dd = dist2(e, ww); if (dd < wd) { wd = dd; w = ww; } }
     if (!w) continue;
     if (wd < 12*12) {
-      w.hp -= e.dps * ((shelter && w.type === 'people') ? 0.7 : 1) * dt;
+      w.hp -= e.dps * ((shelter && (w.type === 'people' || w.type === 'cargo')) ? 0.7 : 1) * dt;
+      if (S.t - F.lastWagonAlarm > 18) { F.lastWagonAlarm = S.t;
+        sfx('keep');
+        toast('🐺 THE WAGONS ARE UNDER ATTACK (' + compass(Math.atan2(w.y - S.player.y, w.x - S.player.x)) + ') — ride to them!', 'bad');
+        logEvent('🐺 Wagons under attack');
+        fabSay('The wagons are under attack, ' + fabSpoken(Math.atan2(w.y - S.player.y, w.x - S.player.x)) + '!'); }
       if (w.hp <= 0) fcWagonLost(w);
     } else {
       const dl = Math.sqrt(wd) || 1;
@@ -2324,12 +2943,7 @@ function fcEnemies(dt) {
   }
 }
 $('bHalt').onclick = () => { if (FABC()) fcHaltToggle(); };
-$('bMilitia').onclick = () => {
-  if (!FABC() || !S.fc) return;
-  S.fc.armed = !S.fc.armed;
-  toast(S.fc.armed ? '🗡️ The refugees take up arms (15 🌾/min)' : '🗡️ The militia stands down', S.fc.armed ? 'good' : undefined);
-  logEvent(S.fc.armed ? '🗡️ Militia armed' : '🗡️ Militia stood down');
-};
+
 /* =================== FABLEAUGB "WARPATH" ENGINE (mode 'fableb' only) =================== */
 const FABB_CAMPNAMES = ['Redfang','Ashpit','Blackmaw','Wolfden','Bonehill','Grimhollow','Rotfen','Snagtooth','Gorecliff','Thornmaze'];
 function fabbLedger() { try { return JSON.parse(localStorage.getItem('fdCampaign') || '{}'); } catch(e) { return {}; } }
@@ -2349,9 +2963,17 @@ function fabbInit() {
   const used = [];
   const namePool = FABB_CAMPNAMES.slice().sort(() => Math.random() - 0.5);
   for (let i = 0; i < nCamps; i++) {
-    let a, tries = 0;
-    do { a = Math.random() * Math.PI * 2; tries++; }
-    while (tries < 200 && used.some(u => Math.abs(Math.atan2(Math.sin(a-u), Math.cos(a-u))) < 70*Math.PI/180));
+    /* max-min placement: of 80 candidates, take the one farthest from every placed camp —
+       (the old accept-after-200-tries loop silently stacked camps when three spread ones
+        tiled the circle; and six camps can never all be 70° apart) */
+    let a = Math.random() * Math.PI * 2, bestScore = -1;
+    for (let k = 0; k < 80; k++) {
+      const cand = Math.random() * Math.PI * 2;
+      const score = used.length
+        ? Math.min(...used.map(u => Math.abs(Math.atan2(Math.sin(cand-u), Math.cos(cand-u)))))
+        : Math.PI;
+      if (score > bestScore) { bestScore = score; a = cand; }
+    }
     used.push(a);
     const r = 320 + Math.random() * 230;
     S.fabb.camps.push({ id: i, name: namePool[i % namePool.length] + ' Camp',
@@ -3411,7 +4033,8 @@ function update(dt) {
   /* --- damage: bodyguard (focused) + defenders; healing --- */
   if (!S.routed) {
     const tdMode = TDL();
-    const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE)
+    const engaged = S.enemies.filter(e => dist2(e,S.player) < BG_RANGE*BG_RANGE
+        && !(FABC() && e.rst && e.rst !== 'alert'))   // you don't swing at bandits who haven't seen you
       .sort((a,b) => dist2(a,S.player) - dist2(b,S.player)).slice(0, tdMode ? 1 : BG_TARGETS);
     let bgM = 1;
     if (FABB() && S.fabb) bgM = 1 + 0.08 * S.fabb.pips;
@@ -3584,11 +4207,17 @@ function updateHUD() {
   $('sKeep').textContent = FABC() ? '—' : Math.max(0,Math.ceil(S.keepHp));
   if (TDL() || FABC()) {
     if (FABC() && S.fc) {
-      const F = S.fc, buf = Math.round(fcTailD() - F.pursuit);
-      $('sWave').textContent = '🏁 ' + Math.round(100 * F.roadDone / F.road) + '%'
-        + ' · 🛡 ' + Math.max(0, buf) + 'm' + ' · 👥 ' + F.souls
-        + ' · 💛 ' + Math.round(F.morale)
-        + (F.halted ? ' · ⛺' : '') + (S.t < F.howlUntil ? ' · 🐺!' : '');
+      const F = S.fc, hunt = F.hunters || 0;
+      $('sSupply').textContent = F.cargo.grain;  $('rSupply').textContent = '';
+      $('sIron').textContent = F.cargo.tools;    $('rIron').textContent = '';
+      $('sStone').textContent = F.cargo.weapons; $('rStone').textContent = '';
+      $('sKeep').textContent = fcCargoCount() + '/' + fcCapacity();
+      const late = S.t - F.deadline;
+      $('sWave').textContent = '💰 ' + Math.round(F.gold) + '/' + F.target
+        + (F.lateFine > 0.5 ? ' (−' + Math.round(F.lateFine) + ')' : '')
+        + ' · ⏳ ' + (late < 0 ? fmtT(-late) : 'LATE')
+        + ' · ' + (hunt ? '🏴 ' + hunt + ' hunting' : '🏴 clear') + ' · 💛 ' + Math.round(F.morale)
+        + (F.halted ? ' · ⛺' : '') + (F.unswept ? ' · 🐂½' : '');
     } else if (FABB() && S.fabb) {
       const left = S.fabb.camps.filter(c=>!c.dead).length + ((S.fabb.citadel && !S.fabb.citadel.dead) ? 1 : 0);
       $('sWave').textContent = '⏱ ' + fmtT(S.t) + ' · 🏕️ ' + left
@@ -3747,7 +4376,7 @@ function draw() {
       bar(p.x, p.y + iconPx*0.95, iconPx*1.4, c.integrity/GUARD_HP, '#f59e0b');
   }
 
-  if (FABC()) { /* the Keep walks — it is the train */ } else if (TDL()) {
+  if (TDL()) {
     /* the Keep is a fortress: big badged icon + its garrison's ground */
     ctx.beginPath(); ctx.arc(p0.x, p0.y, ((CFG.wallMinRing||0)+0.55)*cellPx, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(120,113,108,0.16)'; ctx.fill();
@@ -4248,7 +4877,7 @@ function fcDrawWagonArt(p, ang, sc, w) {
   ctx.rotate(Math.cos(ang) < 0 ? Math.PI + ang : ang);
   ctx.fillStyle = '#7c4a21'; ctx.strokeStyle = '#3f2408'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.roundRect(-11*sc, -4*sc, 22*sc, 8*sc, 2*sc); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = w.type === 'people' ? '#e7d8bd' : w.type === 'granary' ? '#fde68a'
+  ctx.fillStyle = (w.type === 'people' || w.type === 'cargo') ? '#e7d8bd' : w.type === 'granary' ? '#fde68a'
                 : w.type === 'forge' ? '#cbd5e1' : '#ddd6fe';
   ctx.beginPath(); ctx.moveTo(-9*sc, -4*sc); ctx.quadraticCurveTo(0, -14*sc, 9*sc, -4*sc); ctx.closePath();
   ctx.fill(); ctx.stroke();
@@ -4287,7 +4916,8 @@ function fcDrawRoad(pxPerM) {
     ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
     ctx.strokeStyle = '#65a30d'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.font = '12px sans-serif';
-    ctx.fillText(f.kind === 'grain' ? '🌾' : f.kind === 'herbs' ? '🌿' : '🪵', p.x, p.y);
+    ctx.fillText(f.kind === 'grain' ? '🌾' : f.kind === 'coins' ? '💰'
+               : f.kind === 'tools' ? '⚒️' : '⚔️', p.x, p.y);
   }
   for (const a of F.ambushes) { if (!a.revealed) continue;
     const p = px(a.x, a.y); if (!fabOnScreen(p)) continue;
@@ -4308,15 +4938,59 @@ function fcDrawRoad(pxPerM) {
     ctx.beginPath(); ctx.arc(p.x, p.y, 18, -Math.PI/2, -Math.PI/2 + 2*Math.PI*(F.straggler.ttl/100));
     ctx.strokeStyle = '#f87171'; ctx.lineWidth = 3; ctx.stroke();
   }
-  if (F.havenPos) { const p = px(F.havenPos.x, F.havenPos.y);
-    const g = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 90 * pxPerM);
-    g.addColorStop(0, 'rgba(34,197,94,0.30)'); g.addColorStop(1, 'rgba(34,197,94,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, 90 * pxPerM, 0, Math.PI*2); ctx.fill();
-    ctx.font = Math.max(22, 26 * pxPerM) + 'px sans-serif'; ctx.fillText('🏡', p.x, p.y);
-    ctx.font = 'bold 11px sans-serif';
+  for (const t of F.towns) {
+    const p = px(t.x, t.y);
+    if (!fabOnScreen(p)) continue;
+    if (!t.revealed) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+      ctx.setLineDash([4,4]); ctx.strokeStyle = 'rgba(120,113,108,0.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = '12px sans-serif'; ctx.fillStyle = '#78716c'; ctx.fillText('❓', p.x, p.y);
+      continue;
+    }
+    /* safe ground */
+    ctx.beginPath(); ctx.arc(p.x, p.y, t.safeR * pxPerM, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(34,197,94,0.07)'; ctx.fill();
+    ctx.setLineDash([5,7]); ctx.strokeStyle = 'rgba(22,101,52,0.35)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 15, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,251,240,0.95)'; ctx.fill();
+    ctx.strokeStyle = t.charter ? '#b45309' : t.lawless ? '#b91c1c' : '#57534e'; ctx.lineWidth = t.charter ? 3 : 2; ctx.stroke();
+    ctx.font = '15px sans-serif'; ctx.fillText(t.charter ? '👑' : '🏘️', p.x, p.y);
+    if (t.lawless) { ctx.font = '10px sans-serif'; ctx.fillText('🏴', p.x + 12, p.y - 11); }
+    if (F.dest === t) {
+      ctx.font = 'bold 13px sans-serif';
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 3;
+      ctx.strokeText('🚩', p.x + 14, p.y - 14);
+      ctx.fillStyle = '#dc2626'; ctx.fillText('🚩', p.x + 14, p.y - 14);
+    }
+    ctx.font = 'bold 10.5px sans-serif';
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3;
-    ctx.strokeText(F.havenName, p.x, p.y + 24);
-    ctx.fillStyle = '#166534'; ctx.fillText(F.havenName, p.x, p.y + 24);
+    ctx.strokeText(t.name, p.x, p.y + 25);
+    ctx.fillStyle = t.lawless ? '#7f1d1d' : '#44403c'; ctx.fillText(t.name, p.x, p.y + 25);
+    {
+      /* the price board: three numbers, green = cheap here (buy), red = dear here (sell) */
+      const parts = Object.keys(FC_GOODS).map(g => {
+        const pr = fcPrice(t, g), avg = fcAvgPrice(g);
+        return { txt: FC_GOODS[g].ico + pr, col: pr < avg - 0.7 ? '#15803d' : pr > avg + 0.7 ? '#b91c1c' : '#57534e' };
+      });
+      ctx.font = 'bold 10.5px sans-serif';
+      const widths = parts.map(pp => ctx.measureText(pp.txt).width);
+      const gap = 5, total = widths.reduce((a,b)=>a+b, 0) + gap * 2;
+      let x2 = p.x - total / 2;
+      ctx.textAlign = 'left';
+      for (let i = 0; i < parts.length; i++) {
+        ctx.strokeText(parts[i].txt, x2, p.y + 37);
+        ctx.fillStyle = parts[i].col; ctx.fillText(parts[i].txt, x2, p.y + 37);
+        x2 += widths[i] + gap;
+      }
+      ctx.textAlign = 'center';
+    }
+  }
+  /* dest line: the road the oxen intend */
+  if (F.dest) {
+    const hp2 = px(F._px != null ? F._px : 0, F._py != null ? F._py : 0), dp2 = px(F.dest.x, F.dest.y);
+    ctx.beginPath(); ctx.moveTo(hp2.x, hp2.y); ctx.lineTo(dp2.x, dp2.y);
+    ctx.setLineDash([3,8]); ctx.strokeStyle = F.unswept ? 'rgba(220,38,38,0.55)' : 'rgba(120,80,40,0.55)';
+    ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }
   /* the halt ring */
   if (F.ringT > 0.2 && F.ringC) { const p = px(F.ringC.x, F.ringC.y);
@@ -4331,30 +5005,39 @@ function fcDrawRoad(pxPerM) {
     if (!fabOnScreen(p)) continue;
     fcDrawWagonArt(p, w.a || 0, sc, w);
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(w.type === 'people' ? '👥' : w.type === 'granary' ? '🌾' : w.type === 'forge' ? '⚒️' : '⛪',
+    ctx.fillText(w.type === 'cargo' ? '📦' : w.type === 'people' ? '👥' : w.type === 'granary' ? '🌾' : w.type === 'forge' ? '⚒️' : '⛪',
       p.x, p.y - 16*sc);
-    if (w.hp < w.maxHp) bar(p.x, p.y + 12*sc, 26, w.hp / w.maxHp, w.type === 'people' ? '#f87171' : '#fbbf24');
+    if (w.hp < w.maxHp) bar(p.x, p.y + 12*sc, 26, w.hp / w.maxHp, w.type === 'cargo' ? '#f87171' : '#fbbf24');
   }
-  /* the Pursuit tide */
-  const pp2 = fcTrailAt(F.pursuit);
-  const tp = px(pp2.x, pp2.y);
-  const g2 = ctx.createRadialGradient(tp.x, tp.y, 6, tp.x, tp.y, 130 * pxPerM);
-  g2.addColorStop(0, 'rgba(127,29,29,0.42)'); g2.addColorStop(1, 'rgba(127,29,29,0)');
-  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(tp.x, tp.y, 130 * pxPerM, 0, Math.PI*2); ctx.fill();
-  for (let i = 0; i < 7; i++) {
-    const aa = S.realT * 1.7 + i * 0.9;
-    const rr = (18 + 34 * ((Math.sin(aa * 1.3 + i) + 1) / 2)) * pxPerM;
-    const q = { x: tp.x + Math.cos(aa) * rr, y: tp.y + Math.sin(aa) * rr };
-    ctx.beginPath(); ctx.arc(q.x, q.y, 2.5, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(220,38,38,0.7)'; ctx.fill();
+  /* bandit camps — known sites, the villagers talk */
+  for (const c of F.camps || []) {
+    const p = px(c.x, c.y);
+    if (!fabOnScreen(p)) continue;
+    if (c.dead) { ctx.globalAlpha = 0.45; ctx.font = '13px sans-serif'; ctx.fillText('🔥', p.x, p.y); ctx.globalAlpha = 1; continue; }
+    ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(41,37,36,0.78)'; ctx.fill();
+    ctx.strokeStyle = c.risky ? '#b91c1c' : '#78350f'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '12px sans-serif'; ctx.fillText('🏕️', p.x, p.y);
+    ctx.font = '9px sans-serif'; ctx.fillText('🏴', p.x + 11, p.y - 10);
+    if (F.burnT > 0 && Math.hypot(c.x - S.player.x, c.y - S.player.y) < 15) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 18, -Math.PI/2, -Math.PI/2 + Math.PI*2*(F.burnT/4));
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3; ctx.stroke();
+    }
   }
-  ctx.font = Math.max(14, 15 * pxPerM) + 'px sans-serif';
-  ctx.fillText('🐺', tp.x, tp.y);
+  /* bandit intent badges: 🏴 roaming · 🐾 on the scent · ❗ coming for you */
+  for (const e of S.enemies) {
+    if (!e.rst) continue;
+    const p = px(e.x, e.y); if (!fabOnScreen(p)) continue;
+    if (e.rst === 'alert') { ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#dc2626'; ctx.fillText('❗', p.x + 7, p.y - 9); }
+    else if (e.rst === 'scent') { ctx.font = '10px sans-serif'; ctx.fillText('🐾', p.x + 8, p.y - 9); }
+    else { ctx.globalAlpha = 0.75; ctx.font = '9px sans-serif'; ctx.fillText('🏴', p.x + 7, p.y - 9); ctx.globalAlpha = 1; }
+  }
 }
 function fcDrawOverlays() {
   const F = S.fc; if (!F) return;
-  const buf = fcTailD() - F.pursuit;
-  if (buf < 60 || S.t < F.howlUntil) {
+  const danger = S.enemies.some(e => e.rst === 'alert' &&
+    (dist2(e, S.player) < 90*90 || F.wagons.some(w => !w.dead && dist2(e, w) < 90*90)));
+  if (danger) {
     const a = 0.10 + 0.06 * Math.abs(Math.sin(S.realT * 3));
     ctx.fillStyle = 'rgba(220,38,38,' + a.toFixed(3) + ')';
     ctx.fillRect(0, 0, innerWidth, 8);
@@ -4445,6 +5128,14 @@ $('modeRow').addEventListener('click', e => {
   for (const p of $('modeRow').querySelectorAll('.pill')) p.classList.remove('sel');
   b.classList.add('sel');
   CFG.gameMode = b.dataset.mode;
+  $('fcRow').style.display = CFG.gameMode === 'fablec' ? '' : 'none';
+  storeConfig();
+});
+$('fcRow').addEventListener('click', e => {
+  const b = e.target.closest('.pill'); if (!b) return;
+  for (const p of $('fcRow').querySelectorAll('.pill')) p.classList.remove('sel');
+  b.classList.add('sel');
+  CFG.fcContract = b.dataset.fcc;
   storeConfig();
 });
 $('strengthRow').addEventListener('click', e => {
@@ -4465,6 +5156,7 @@ $('strengthRow').addEventListener('click', e => {
     for (const p of $('modeRow').querySelectorAll('.pill')) p.classList.remove('sel');
     const mp = document.querySelector('#modeRow .pill[data-mode="'+CFG.gameMode+'"]');
     if (mp) mp.classList.add('sel'); else { CFG.gameMode = 'td'; document.querySelector('#modeRow .pill[data-mode="td"]').classList.add('sel'); }
+    $('fcRow').style.display = CFG.gameMode === 'fablec' ? '' : 'none';
   }
   if (CFG.strength === 0) {
     for (const p of $('strengthRow').querySelectorAll('.pill')) p.classList.remove('sel');
